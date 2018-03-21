@@ -84,18 +84,18 @@ class Collection implements ArrayAccess, Countable
     /**
      * Checks if all elements in the specified collection are contained in this collection.
      *
-     * @param Collection $collection
+     * @param array|Collection $other
      * @return bool
      */
-    function containsAll($collection) {}
+    function containsAll($other) {}
 
     /**
      * Checks if the array contains the given key.
      *
-     * @param int|string $element
+     * @param int|string $key
      * @return bool
      */
-    function containsKey($element) {}
+    function containsKey($key) {}
 
     /**
      * Check if the array maps one or more keys to the specified value.
@@ -390,6 +390,13 @@ class Collection implements ArrayAccess, Countable
      * Returns true if the array is not empty.
      */
     function isNotEmpty() {}
+
+    /**
+     * Return a collection of all keys in the collection.
+     *
+     * @return Collection
+     */
+    function keys() {}
 
     /**
      * Returns the last element matching the given predicate.
@@ -881,4 +888,11 @@ class Collection implements ArrayAccess, Countable
      * @param array|Collection $other
      */
     function union($other) {}
+
+    /**
+     * Return a collection of all values of the collection.
+     *
+     * @return Collection
+     */
+    function values() {}
 }
