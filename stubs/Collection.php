@@ -228,7 +228,7 @@ class Collection implements ArrayAccess, Countable
      * Returns the first element matching the given predicate, or null if no such
      * element was found.
      *
-     * @param callable $predicate ($value) -> bool
+     * @param callable $predicate ($value, $key) -> bool
      * @return mixed
      */
     function find($predicate) {}
@@ -237,7 +237,7 @@ class Collection implements ArrayAccess, Countable
      * Returns the last element matching the given predicate, or null if no such
      * element was found.
      *
-     * @param callable $predicate ($value) -> bool
+     * @param callable $predicate ($value, $key) -> bool
      * @return mixed
      */
     function findLast($predicate) {}
@@ -366,10 +366,10 @@ class Collection implements ArrayAccess, Countable
     /**
      * Initialize collection with given data.
      *
-     * @param array $data[$optional]
+     * @param array|Collection $elements[$optional]
      * @return Collection
      */
-    static function init($data) {}
+    static function init($elements) {}
 
     /**
      * Returns a collection containing all elements that are contained by both this collection and the
@@ -584,22 +584,22 @@ class Collection implements ArrayAccess, Countable
     /**
      * @internal
      */
-    function offsetUnset($offset) {}
+    function offsetUnset($key) {}
 
     /**
      * @internal
      */
-    function offsetSet($offset, $value) {}
+    function offsetSet($key, $value) {}
 
     /**
      * @internal
      */
-    function offsetGet($offset) {}
+    function offsetGet($key) {}
 
     /**
      * @internal
      */
-    function offsetExists($offset) {}
+    function offsetExists($key) {}
 
     /**
      * Performs the given action on each element and returns the collection itself afterwards.
@@ -741,11 +741,19 @@ class Collection implements ArrayAccess, Countable
     function single($predicate) {}
 
     /**
-     * Returns a list containing elements at specified indices.
+     * Returns a list containing elements at specified keys.
      *
-     * @param array|Collection $indices
+     * @param array|Collection $keys
      */
-    function slice($indices) {}
+    function slice($keys) {}
+
+    /**
+     * Returns a collection containing elements at indices in the specified indices range.
+     *
+     * @param int $from_index
+     * @param int $to_index[optional]
+     */
+    function sliceRange($from_index, $to_index) {}
 
     /**
      * Sorts the collection in-place according to the natural order of its elements.

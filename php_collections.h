@@ -13,8 +13,8 @@ extern zend_module_entry collections_module_entry;
 extern zend_class_entry collections_collection_ce;
 extern zend_class_entry collections_pair_ce;
 
-const zend_function_entry collection_methods[];
-const zend_function_entry pair_methods[];
+extern const zend_function_entry collection_methods[];
+extern const zend_function_entry pair_methods[];
 
 #define PHP_COLLECTIONS_VERSION "0.1.0"
 

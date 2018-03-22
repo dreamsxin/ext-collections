@@ -9,8 +9,6 @@
 
 #include <php.h>
 
-#include "php_collections.h"
-
 PHP_METHOD(Collection, __construct);
 PHP_METHOD(Collection, addAll);
 PHP_METHOD(Collection, all);
@@ -100,6 +98,7 @@ PHP_METHOD(Collection, reversed);
 PHP_METHOD(Collection, shuffle);
 PHP_METHOD(Collection, single);
 PHP_METHOD(Collection, slice);
+PHP_METHOD(Collection, sliceRange);
 PHP_METHOD(Collection, sort);
 PHP_METHOD(Collection, sortBy);
 PHP_METHOD(Collection, sortByDescending);
@@ -119,5 +118,7 @@ PHP_METHOD(Collection, toCollection);
 PHP_METHOD(Collection, toPairs);
 PHP_METHOD(Collection, union);
 PHP_METHOD(Collection, values);
+
+PHP_METHOD(Pair, __construct);
 
 #endif // !PHP_COLLECTIONS_FE_H
