@@ -108,11 +108,11 @@ class Collection implements ArrayAccess, Countable
     /**
      * Returns new array which is a copy of the original array.
      *
-     * @param Collection $collection
+     * @param array|Collection $elements
      * @param int $new_size[optional]
      * @return Collection
      */
-    function copyOf($collection, $new_size) {}
+    function copyOf($elements, $new_size) {}
 
     /**
      * Returns new array which is a copy of range of original array.
