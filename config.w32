@@ -1,5 +1,5 @@
 ARG_ENABLE("collections", "enable collections support", "no");
 
 if (PHP_COLLECTIONS != "no") {
-    EXTENSION("collections", "collections.c collections_fe.c collections_methods.c", true);
+    EXTENSION("collections", "src/collections.c src/collections_me.c src/collections_methods.c", true);
 }

@@ -7,7 +7,7 @@
 #include <php.h>
 
 #include "php_collections.h"
-#include "php_collections_fe.h"
+#include "php_collections_me.h"
 
 #define NEW_COLLECTION_OBJ(name) \
     zend_object* (name) = (zend_object*)ecalloc(1, sizeof(zend_object) + \

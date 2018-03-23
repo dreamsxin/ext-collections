@@ -10,6 +10,8 @@ if test "$PHP_COLLECTIONS" != "no"; then
   else
     CFLAGS="-O2"
   fi
-  COLLECTIONS_SRC="collections.c collections_fe.c collections_methods.c"
+  COLLECTIONS_SRC="src/collections.c
+    src/collections_me.c
+    src/collections_methods.c"
   PHP_NEW_EXTENSION(collections, $COLLECTIONS_SRC, $ext_shared)
 fi

@@ -1,5 +1,5 @@
 //
-// ext-collections/php_collections_fe.h
+// ext-collections/php_collections_me.h
 //
 // @Author CismonX
 //

@@ -1,5 +1,5 @@
 //
-// ext-collections/collections_fe.c
+// ext-collections/collections_me.c
 //
 // @Author CismonX
 //
@@ -7,7 +7,7 @@
 #include <php.h>
 
 #include "php_collections.h"
-#include "php_collections_fe.h"
+#include "php_collections_me.h"
 
 ZEND_BEGIN_ARG_INFO(action_arginfo, 0)
     ZEND_ARG_CALLABLE_INFO(0, action, 0)
