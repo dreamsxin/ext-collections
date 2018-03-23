@@ -6,9 +6,9 @@ PHP_ARG_ENABLE(collections, for debug support,
 
 if test "$PHP_COLLECTIONS" != "no"; then
   if test "$PHP_COLLECTIONS_DEBUG" != "no"; then
-    CFLAGS="-O2"
-  else
     CFLAGS="-g -O0"
+  else
+    CFLAGS="-O2"
   fi
   COLLECTIONS_SRC="collections.c collections_fe.c collections_methods.c"
   PHP_NEW_EXTENSION(collections, $COLLECTIONS_SRC, $ext_shared)

@@ -5,15 +5,25 @@
  */
 class Pair
 {
+    /**
+     * First value of the pair.
+     *
+     * @var mixed $first
+     */
     public $first;
 
+    /**
+     * Second value of the pair.
+     *
+     * @var mixed $second
+     */
     public $second;
 
     /**
      * Constructor.
      *
-     * @param $first
-     * @param $second
+     * @param mixed $first
+     * @param mixed $second
      */
     function __construct($first, $second) {}
 }

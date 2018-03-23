@@ -7,8 +7,6 @@
 #ifndef PHP_COLLECTIONS_FE_H
 #define PHP_COLLECTIONS_FE_H
 
-#include <php.h>
-
 PHP_METHOD(Collection, __construct);
 PHP_METHOD(Collection, addAll);
 PHP_METHOD(Collection, all);

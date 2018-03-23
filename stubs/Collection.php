@@ -418,7 +418,7 @@ class Collection implements ArrayAccess, Countable
      * Returns a collection containing the results of applying the given transform function
      * to each element in the original collection.
      *
-     * @param callable $transform ($value, $key) -> $new_value
+     * @param callable $transform ($value, $key) -> Pair
      * @return Collection
      */
     function map($transform) {}
@@ -447,7 +447,7 @@ class Collection implements ArrayAccess, Countable
      * results to the given destination.
      *
      * @param Collection $destination
-     * @param callable $transform ($value, $key) -> $new_value
+     * @param callable $transform ($value, $key) -> Pair
      * @return Collection
      */
     function mapTo($destination, $transform) {}

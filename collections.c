@@ -14,12 +14,32 @@
 
 #include "php_collections.h"
 
+zend_string* collection_property_name;
+zend_string* pair_first_name;
+zend_string* pair_second_name;
+
+zend_class_entry* collections_collection_ce;
+zend_class_entry* collections_pair_ce;
+
 PHP_MINIT_FUNCTION(collections)
 {
-    INIT_CLASS_ENTRY_EX(collections_collection_ce, "Collection", strlen("Collection"), collection_methods);
-    zend_register_internal_class(&collections_collection_ce);
-    INIT_CLASS_ENTRY_EX(collections_pair_ce, "Pair", strlen("Pair"), pair_methods);
-    zend_register_internal_class(&collections_pair_ce);
+    collection_property_name = zend_string_init("_a", strlen("_a"), 1);
+    pair_first_name = zend_string_init("first", strlen("first"), 1);
+    pair_second_name = zend_string_init("first", strlen("second"), 1);
+    zend_class_entry collection_ce;
+    INIT_CLASS_ENTRY_EX(collection_ce, "Collection", strlen("Collection"), collection_methods);
+    collections_collection_ce = zend_register_internal_class(&collection_ce);
+    zend_class_entry pair_ce;
+    INIT_CLASS_ENTRY_EX(pair_ce, "Pair", strlen("Pair"), pair_methods);
+    collections_pair_ce = zend_register_internal_class(&pair_ce);
+    return SUCCESS;
+}
+
+PHP_MSHUTDOWN_FUNCTION(collections)
+{
+    zend_string_release(collection_property_name);
+    zend_string_release(pair_first_name);
+    zend_string_release(pair_second_name);
     return SUCCESS;
 }
 
@@ -43,7 +63,7 @@ zend_module_entry collections_module_entry = {
     "collections",
     NULL,
     PHP_MINIT(collections),
-    NULL,
+    PHP_MSHUTDOWN(collections),
     PHP_RINIT(collections),
     NULL,
     PHP_MINFO(collections),
