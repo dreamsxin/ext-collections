@@ -15,14 +15,14 @@ class Collection implements ArrayAccess, Countable
      * Adds all elements of the given elements collection to this Collection.
      *
      * @param array|Collection $elements
-     * @return bool
+     * @return void
      */
     function addAll($elements) {}
 
     /**
      * Returns true if all elements match the given predicate.
      *
-     * @param callable $predicate ($value, $key) -> bool
+     * @param callable $predicate ($value, $key, $index) -> bool
      * @return bool
      */
     function all($predicate) {}
@@ -30,7 +30,7 @@ class Collection implements ArrayAccess, Countable
     /**
      * Returns true if at least one element matches the given predicate.
      *
-     * @param callable $predicate ($value, $key) -> bool
+     * @param callable $predicate ($value, $key, $index) -> bool
      * @return bool
      */
     function any($predicate) {}
@@ -141,7 +141,7 @@ class Collection implements ArrayAccess, Countable
      * Returns a collection containing only elements from the given array having distinct keys
      * returned by the given selector function.
      *
-     * @param callable $selector ($value, $key) -> $key
+     * @param callable $selector ($value, $key, $index) -> $key
      * @return Collection
      */
     function distinctBy($selector) {}
@@ -166,7 +166,7 @@ class Collection implements ArrayAccess, Countable
      * Returns a collection containing all elements except last elements that satisfy
      * the given predicate.
      *
-     * @param callable $predicate ($value, $key) -> bool
+     * @param callable $predicate ($value, $key, $index) -> bool
      * @return Collection
      */
     function dropLastWhile($predicate) {}
@@ -175,7 +175,7 @@ class Collection implements ArrayAccess, Countable
      * Returns a collection containing all elements except first elements that satisfy
      * the given predicate.
      *
-     * @param $predicate $predicate ($value, $key) -> bool
+     * @param $predicate $predicate ($value, $key, $index) -> bool
      * @return Collection
      */
     function dropWhile($predicate) {}
@@ -193,7 +193,7 @@ class Collection implements ArrayAccess, Countable
     /**
      * Returns a collection containing only elements matching the given predicate.
      *
-     * @param callable $predicate ($value, $key) -> bool
+     * @param callable $predicate ($value, $key, $index) -> bool
      * @return Collection
      */
     function filter($predicate) {}
@@ -201,7 +201,7 @@ class Collection implements ArrayAccess, Countable
     /**
      * Returns a collection containing only elements not matching the given predicate.
      *
-     * @param callable $predicate ($value, $key) -> bool
+     * @param callable $predicate ($value, $key, $index) -> bool
      * @return Collection
      */
     function filterNot($predicate) {}
@@ -210,7 +210,7 @@ class Collection implements ArrayAccess, Countable
      * Appends all elements not matching the given predicate to the given destination.
      *
      * @param Collection $destination
-     * @param callable $predicate ($value, $key) -> bool
+     * @param callable $predicate ($value, $key, $index) -> bool
      * @return Collection
      */
     function filterNotTo($destination, $predicate) {}
@@ -219,7 +219,7 @@ class Collection implements ArrayAccess, Countable
      * Appends all elements matching the given predicate to the given destination.
      *
      * @param Collection $destination
-     * @param callable $predicate ($value, $key) -> bool
+     * @param callable $predicate ($value, $key, $index) -> bool
      * @return Collection
      */
     function filterTo($destination, $predicate) {}
@@ -228,7 +228,7 @@ class Collection implements ArrayAccess, Countable
      * Returns the first element matching the given predicate, or null if no such
      * element was found.
      *
-     * @param callable $predicate ($value, $key) -> bool
+     * @param callable $predicate ($value, $key, $index) -> bool
      * @return mixed
      */
     function find($predicate) {}
@@ -237,7 +237,7 @@ class Collection implements ArrayAccess, Countable
      * Returns the last element matching the given predicate, or null if no such
      * element was found.
      *
-     * @param callable $predicate ($value, $key) -> bool
+     * @param callable $predicate ($value, $key, $index) -> bool
      * @return mixed
      */
     function findLast($predicate) {}
@@ -245,7 +245,7 @@ class Collection implements ArrayAccess, Countable
     /**
      * Returns the first element matching the given predicate.
      *
-     * @param callable $predicate[optional] ($value, $key) -> bool
+     * @param callable $predicate[optional] ($value, $key, $index) -> bool
      * @return mixed
      */
     function first($predicate) {}
@@ -254,7 +254,7 @@ class Collection implements ArrayAccess, Countable
      * Returns a collection of all elements yielded from results of transform function
      * being invoked on each element of original collection.
      *
-     * @param callable $transform ($value, $key) -> array|Collection
+     * @param callable $transform ($value, $key, $index) -> array|Collection
      * @return Collection
      */
     function flatMap($transform) {}
@@ -264,7 +264,7 @@ class Collection implements ArrayAccess, Countable
      * original collection, to the given destination.
      *
      * @param Collection $destination
-     * @param callable $transform ($value, $key) -> array|Collection
+     * @param callable $transform ($value, $key, $index) -> array|Collection
      * @return Collection
      */
     function flatMapTo($destination, $transform) {}
@@ -299,7 +299,7 @@ class Collection implements ArrayAccess, Countable
     /**
      * Performs the given action on each element.
      *
-     * @param callable $action ($value, $key) -> void
+     * @param callable $action ($value, $key, $index) -> void
      * @return void
      */
     function forEach($action) {}
@@ -319,7 +319,7 @@ class Collection implements ArrayAccess, Countable
      * original array by the key returned by the given key_selector function applied to the element
      * and returns a collection where each group key is associated with a list of corresponding values.
      *
-     * @param callable $key_selector ($value, $key) -> $new_key
+     * @param callable $key_selector ($value, $key, $index) -> $new_key
      * @param callable $value_transform[optional] ($value) -> $new_value
      * @return Collection
      */
@@ -331,7 +331,7 @@ class Collection implements ArrayAccess, Countable
      * puts to the destination collection each group key associated with a list of corresponding values.
      *
      * @param Collection $destination
-     * @param callable $key_selector ($value, $key) -> $new_key
+     * @param callable $key_selector ($value, $key, $index) -> $new_key
      * @param callable $value_transform[optional] ($value) -> $new_value
      * @return Collection
      */
@@ -401,7 +401,7 @@ class Collection implements ArrayAccess, Countable
     /**
      * Returns the last element matching the given predicate.
      *
-     * @param callable $predicate[optional] ($value, $key) -> bool
+     * @param callable $predicate[optional] ($value, $key, $index) -> bool
      * @return mixed
      */
     function last($predicate) {}
@@ -418,7 +418,7 @@ class Collection implements ArrayAccess, Countable
      * Returns a collection containing the results of applying the given transform function
      * to each element in the original collection.
      *
-     * @param callable $transform ($value, $key) -> Pair
+     * @param callable $transform ($value, $key, $index) -> Pair
      * @return Collection
      */
     function map($transform) {}
@@ -427,7 +427,7 @@ class Collection implements ArrayAccess, Countable
      * Returns a new collection with entries having the keys obtained by applying the transform function
      * to each keys and values of this collection.
      *
-     * @param callable $transform ($value, $key) -> $new_key
+     * @param callable $transform ($value, $key, $index) -> $new_key
      * @return Collection
      */
     function mapKeys($transform) {}
@@ -437,7 +437,7 @@ class Collection implements ArrayAccess, Countable
      * transform function to each keys and values of this collections.
      *
      * @param Collection $destination
-     * @param callable $transform ($value, $key) -> $new_key
+     * @param callable $transform ($value, $key, $index) -> $new_key
      * @return Collection
      */
     function mapKeysTo($destination, $transform) {}
@@ -447,7 +447,7 @@ class Collection implements ArrayAccess, Countable
      * results to the given destination.
      *
      * @param Collection $destination
-     * @param callable $transform ($value, $key) -> Pair
+     * @param callable $transform ($value, $key, $index) -> Pair
      * @return Collection
      */
     function mapTo($destination, $transform) {}
@@ -456,7 +456,7 @@ class Collection implements ArrayAccess, Countable
      * Returns a new collection with entries having the keys of this collection and the values obtained
      * by applying the transform function to each entry in this collection.
      *
-     * @param callable $transform ($value, $key) -> $new_value
+     * @param callable $transform ($value, $key, $index) -> $new_value
      * @return Collection
      */
     function mapValues($transform) {}
@@ -466,7 +466,7 @@ class Collection implements ArrayAccess, Countable
      * the values obtained by applying the transform function to each entry in this collection.
      *
      * @param Collection $destination
-     * @param callable $transform ($value, $key) -> $new_value
+     * @param callable $transform ($value, $key, $index) -> $new_value
      * @return Collection
      */
     function mapValuesTo($destination, $transform) {}
@@ -482,7 +482,7 @@ class Collection implements ArrayAccess, Countable
      * Returns the first element yielding the largest value of the given function or null if
      * there are no elements.
      *
-     * @param callable $selector ($value, $key) -> $new_value
+     * @param callable $selector ($value, $key, $index) -> $new_value
      * @return mixed
      */
     function maxBy($selector) {}
@@ -507,7 +507,7 @@ class Collection implements ArrayAccess, Countable
      * Returns the first element yielding the smallest value of the given function or null if
      * there are no elements.
      *
-     * @param callable $selector ($value, $key) -> $new_value
+     * @param callable $selector ($value, $key, $index) -> $new_value
      * @return mixed
      */
     function minBy($selector) {}
@@ -576,7 +576,7 @@ class Collection implements ArrayAccess, Countable
     /**
      * Returns true if no elements match the given predicate.
      *
-     * @param callable $predicate ($value, $key) -> bool
+     * @param callable $predicate ($value, $key, $index) -> bool
      * @return bool
      */
     function none($predicate) {}
@@ -604,7 +604,7 @@ class Collection implements ArrayAccess, Countable
     /**
      * Performs the given action on each element and returns the collection itself afterwards.
      *
-     * @param callable $action ($value, $key) -> void
+     * @param callable $action ($value, $key, $index) -> void
      * @return Collection
      */
     function onEach($action) {}
@@ -621,7 +621,7 @@ class Collection implements ArrayAccess, Countable
      * elements for which predicate yielded true, while second collection contains elements for
      * which predicate yielded false.
      *
-     * @param callable $predicate ($value, $key) -> bool
+     * @param callable $predicate ($value, $key, $index) -> bool
      * @return Pair
      */
     function partition($predicate) {}
@@ -697,7 +697,7 @@ class Collection implements ArrayAccess, Countable
     /**
      * Removes all elements from this collection that match the given predicate.
      *
-     * @param callable $predicate ($value, $key) -> bool
+     * @param callable $predicate ($value, $key, $index) -> bool
      * @return bool
      */
     function removeAll($predicate) {}
@@ -705,7 +705,7 @@ class Collection implements ArrayAccess, Countable
     /**
      * Retains only elements of this collection that match the given predicate.
      *
-     * @param callable $predicate ($value, $key) -> bool
+     * @param callable $predicate ($value, $key, $index) -> bool
      * @return bool
      */
     function retainAll($predicate) {}
@@ -735,7 +735,7 @@ class Collection implements ArrayAccess, Countable
      * Returns the single element matching the given predicate, or null if there is no or more than
      * one matching element.
      *
-     * @param callable $predicate ($value, $key) -> bool
+     * @param callable $predicate ($value, $key, $index) -> bool
      * @return mixed
      */
     function single($predicate) {}
@@ -766,7 +766,7 @@ class Collection implements ArrayAccess, Countable
      * Sorts elements in the collection in-place according to natural sort order of the value returned
      * by specified selector function.
      *
-     * @param callable $selector ($value, $key) -> $new_value
+     * @param callable $selector ($value, $key, $index) -> $new_value
      * @return void
      */
     function sortBy($selector) {}
@@ -775,7 +775,7 @@ class Collection implements ArrayAccess, Countable
      * Sorts elements in the collection in-place descending according to natural sort order of the
      * value returned by specified selector function.
      *
-     * @param callable $selector ($value, $key) -> $new_value
+     * @param callable $selector ($value, $key, $index) -> $new_value
      * @return void
      */
     function sortByDescending($selector) {}
@@ -806,7 +806,7 @@ class Collection implements ArrayAccess, Countable
      * Returns a collection of all elements sorted according to natural sort order of the
      * value returned by specified selector function.
      *
-     * @param callable $selector ($value, $key) -> $new_value
+     * @param callable $selector ($value, $key, $index) -> $new_value
      * @return Collection
      */
     function sortedBy($selector) {}
@@ -815,7 +815,7 @@ class Collection implements ArrayAccess, Countable
      * Returns a collection of all elements sorted descending according to natural sort order
      * of the value returned by specified selector function.
      *
-     * @param callable $selector ($value, $key) -> $new_value
+     * @param callable $selector ($value, $key, $index) -> $new_value
      * @return Collection
      */
     function sortedByDescending($selector) {}
@@ -823,7 +823,7 @@ class Collection implements ArrayAccess, Countable
     /**
      * Returns a collection of all elements sorted descending according to their natural sort order.
      *
-     * @param callable $selector ($value, $key) -> $new_value
+     * @param callable $selector ($value, $key, $index) -> $new_value
      * @return Collection
      */
     function sortedDescending($selector) {}
@@ -855,7 +855,7 @@ class Collection implements ArrayAccess, Countable
     /**
      * Returns a collection containing last elements satisfying the given predicate.
      *
-     * @param $predicate ($value, $key) -> bool
+     * @param $predicate ($value, $key, $index) -> bool
      * @return Collection
      */
     function takeLastWhile($predicate) {}
@@ -863,7 +863,7 @@ class Collection implements ArrayAccess, Countable
     /**
      * Returns a collection containing first elements satisfying the given predicate.
      *
-     * @param $predicate ($value, $key) -> bool
+     * @param $predicate ($value, $key, $index) -> bool
      * @return Collection
      */
     function takeWhile($predicate) {}

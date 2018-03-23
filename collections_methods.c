@@ -29,19 +29,72 @@
 #define PHP_COLLECTIONS_ERROR(type, msg) php_error_docref(NULL, type, msg)
 #define ERR_BAD_ARGUMENT_TYPE() PHP_COLLECTIONS_ERROR(E_WARNING, "Bad argument type")
 
-PHP_METHOD(Collection, __construct)
-{
-    
-}
+#define ELEMENTS_VALIDATE(elements) \
+    if (IS_COLLECTION(elements)) { \
+        zval rv; \
+        (elements) = COLLECTION_FETCH(elements); \
+    } else if (UNEXPECTED(Z_TYPE_P(elements) != IS_ARRAY)) { \
+        ERR_BAD_ARGUMENT_TYPE(); \
+        RETVAL_NULL(); \
+    }
+
+#define ARRAY_CLONE(dest, src) \
+    zend_array (dest); \
+    zend_hash_init(&(dest), zend_hash_num_elements(Z_ARRVAL_P(src)), NULL, ZVAL_PTR_DTOR, 0); \
+    zend_hash_copy(&(dest), Z_ARRVAL_P(src), NULL)
+
+#define RETVAL_NEW_COLLECTION(collection) \
+    do { \
+        NEW_COLLECTION_OBJ(obj); \
+        zval retval; \
+        ZVAL_OBJ(&retval, obj); \
+        zval property; \
+        ZVAL_ARR(&property, collection); \
+        COLLECTION_UPDATE(&retval, &property); \
+        RETVAL_OBJ(obj); \
+    } while (0)
+
+PHP_METHOD(Collection, __construct) {}
 
 PHP_METHOD(Collection, addAll)
 {
-    
+    zval* elements;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(elements)
+    ZEND_PARSE_PARAMETERS_END();
+    ELEMENTS_VALIDATE(elements);
+    zval rv;
+    zval* current = COLLECTION_FETCH_EX();
+    ZEND_HASH_FOREACH_VAL_IND(Z_ARRVAL_P(elements), zval* val)
+        zend_hash_next_index_insert(Z_ARRVAL_P(current), val);
+    ZEND_HASH_FOREACH_END();
+    COLLECTION_UPDATE_EX(current);
 }
 
 PHP_METHOD(Collection, all)
 {
-    
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    zval params[3], rv, retval;
+    fci.param_count = 3;
+    fci.retval = &retval;
+    fci.params = params;
+    zval* current = COLLECTION_FETCH_EX();
+    ZEND_HASH_FOREACH_BUCKET(Z_ARRVAL_P(current), Bucket* bucket)
+        ZVAL_COPY(&params[0], &bucket->val);
+        if (bucket->key)
+            ZVAL_STR(&params[1], bucket->key);
+        else
+            ZVAL_NULL(&params[1]);
+        ZVAL_LONG(&params[2], bucket->h);
+        zend_call_function(&fci, &fcc);
+        if (Z_TYPE(retval) == IS_FALSE)
+            RETURN_FALSE;
+    ZEND_HASH_FOREACH_END();
+    RETURN_TRUE;
 }
 
 PHP_METHOD(Collection, any)
@@ -245,13 +298,7 @@ PHP_METHOD(Collection, init)
     zval retval;
     ZVAL_OBJ(&retval, obj);
     if (elements) {
-        if (IS_COLLECTION(elements)) {
-            zval rv;
-            elements = COLLECTION_FETCH(elements);
-        } else if (UNEXPECTED(Z_TYPE_P(elements) != IS_ARRAY)) {
-            ERR_BAD_ARGUMENT_TYPE();
-            RETVAL_NULL();
-        }
+        ELEMENTS_VALIDATE(elements);
         COLLECTION_UPDATE(&retval, elements);
     } else {
         zval collection;
@@ -260,7 +307,7 @@ PHP_METHOD(Collection, init)
         COLLECTION_UPDATE(&retval, &collection);
         zval_ptr_dtor(&collection);
     }
-    ZVAL_COPY_VALUE(return_value, &retval);
+    RETVAL_OBJ(obj);
 }
 
 PHP_METHOD(Collection, intersect)
