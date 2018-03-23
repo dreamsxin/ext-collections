@@ -1,5 +1,8 @@
 # ext-collections
 
+[![Travis-CI](https://travis-ci.org/CismonX/ext-collections.svg?branch=master)](https://travis-ci.org/CismonX/ext-collections)
+[![MIT license](https://img.shields.io/badge/licence-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 ## 1. Introduction
 
 This PHP extension provides a set of useful functional-style operations on PHP arrays, which makes array manipulation simple and scalable.

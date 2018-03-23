@@ -1,0 +1,18 @@
+sudo: required
+dist: trusty
+group: edge
+
+language: php
+
+php:
+  - 7.0
+  - 7.1
+  - 7.2
+  - nightly
+
+script:
+  - phpize
+  - ./configure
+  - make
+  - make test
+  - sudo make install
