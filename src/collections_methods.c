@@ -9,22 +9,30 @@
 #include "php_collections.h"
 #include "php_collections_me.h"
 
-#define NEW_COLLECTION_OBJ(name) \
+#define NEW_OBJ(name, ce) \
     zend_object* (name) = (zend_object*)ecalloc(1, sizeof(zend_object) + \
-    zend_object_properties_size(collections_collection_ce)); \
-    zend_object_std_init(name, collections_collection_ce); \
-    object_properties_init(name, collections_collection_ce); \
-    obj->handlers = &std_object_handlers;
+    zend_object_properties_size(ce)); \
+    zend_object_std_init(name, ce); \
+    object_properties_init(name, ce); \
+    (name)->handlers = &std_object_handlers;
+#define NEW_COLLECTION_OBJ(name) NEW_OBJ(name, collections_collection_ce)
+#define NEW_PAIR_OBJ(name) NEW_OBJ(name, collections_pair_ce)
 
 #define IS_COLLECTION(zval) \
     Z_TYPE_P(elements) == IS_OBJECT && Z_OBJCE_P(elements) == collections_collection_ce
 
-#define COLLECTION_UPDATE(obj, value) \
-    zend_update_property_ex(zend_get_executed_scope(), obj, collection_property_name, value)
+#define OBJ_PROPERTY_UPDATE(obj, property_name, value) \
+    zend_update_property_ex(zend_get_executed_scope(), obj, property_name, value)
+#define OBJ_PROPERTY_FETCH(obj, property_name) \
+    zend_read_property_ex(zend_get_executed_scope(), obj, property_name, 1, &rv)
+#define COLLECTION_UPDATE(obj, value) OBJ_PROPERTY_UPDATE(obj, collection_property_name, value)
 #define COLLECTION_UPDATE_EX(value) COLLECTION_UPDATE(getThis(), value)
-#define COLLECTION_FETCH(obj) \
-    zend_read_property_ex(zend_get_executed_scope(), obj, collection_property_name, 1, &rv)
+#define COLLECTION_FETCH(obj) OBJ_PROPERTY_FETCH(obj, collection_property_name)
 #define COLLECTION_FETCH_EX() COLLECTION_FETCH(getThis())
+#define PAIR_UPDATE_FIRST(obj, value) OBJ_PROPERTY_UPDATE(obj, pair_first_name, value)
+#define PAIR_UPDATE_SECOND(obj, value) OBJ_PROPERTY_UPDATE(obj, pair_second_name, value)
+#define PAIR_FETCH_FIRST(obj) OBJ_PROPERTY_FETCH(obj, pair_first_name)
+#define PAIR_FETCH_SECOND(obj) OBJ_PROPERTY_FETCH(obj, pair_second_name)
 
 #define PHP_COLLECTIONS_ERROR(type, msg) php_error_docref(NULL, type, msg)
 #define ERR_BAD_ARGUMENT_TYPE() PHP_COLLECTIONS_ERROR(E_WARNING, "Bad argument type")
@@ -78,8 +86,8 @@ PHP_METHOD(Collection, all)
     ZEND_PARSE_PARAMETERS_START(1, 1)
         Z_PARAM_FUNC(fci, fcc)
     ZEND_PARSE_PARAMETERS_END();
-    zval params[3], rv, retval;
-    fci.param_count = 3;
+    zval params[2], rv, retval;
+    fci.param_count = 2;
     fci.retval = &retval;
     fci.params = params;
     zval* current = COLLECTION_FETCH_EX();
@@ -88,8 +96,7 @@ PHP_METHOD(Collection, all)
         if (bucket->key)
             ZVAL_STR(&params[1], bucket->key);
         else
-            ZVAL_NULL(&params[1]);
-        ZVAL_LONG(&params[2], bucket->h);
+            ZVAL_LONG(&params[1], bucket->h);
         zend_call_function(&fci, &fcc);
         if (Z_TYPE(retval) == IS_FALSE)
             RETURN_FALSE;
@@ -99,7 +106,27 @@ PHP_METHOD(Collection, all)
 
 PHP_METHOD(Collection, any)
 {
-    
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_FUNC(fci, fcc)
+        ZEND_PARSE_PARAMETERS_END();
+    zval params[2], rv, retval;
+    fci.param_count = 2;
+    fci.retval = &retval;
+    fci.params = params;
+    zval* current = COLLECTION_FETCH_EX();
+    ZEND_HASH_FOREACH_BUCKET(Z_ARRVAL_P(current), Bucket* bucket)
+        ZVAL_COPY(&params[0], &bucket->val);
+        if (bucket->key)
+            ZVAL_STR(&params[1], bucket->key);
+        else
+            ZVAL_LONG(&params[1], bucket->h);
+        zend_call_function(&fci, &fcc);
+        if (Z_TYPE(retval) == IS_TRUE)
+            RETURN_TRUE;
+    ZEND_HASH_FOREACH_END();
+    RETURN_FALSE;
 }
 
 PHP_METHOD(Collection, associate)
@@ -649,5 +676,12 @@ PHP_METHOD(Collection, values)
 
 PHP_METHOD(Pair, __construct)
 {
-    
+    zval* first;
+    zval* second;
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_ZVAL(first)
+        Z_PARAM_ZVAL(second)
+    ZEND_PARSE_PARAMETERS_END();
+    PAIR_UPDATE_FIRST(getThis(), first);
+    PAIR_UPDATE_SECOND(getThis(), second);
 }

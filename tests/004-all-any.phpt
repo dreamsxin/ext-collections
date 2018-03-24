@@ -10,10 +10,16 @@ $collection = Collection::init([
 $result = $collection->all(function ($value) {
     return $value < 100;
 });
-$result2 = $collection->all(function ($value, $key) {
+$result1 = $collection->all(function ($value, $key) {
     return strlen($key) < 4;
 });
-if ($result || !$result2)
+$result2 = $collection->any(function ($value) {
+    return $value % 3 == 0;
+});
+$result3 = $collection->any(function ($value, $key) {
+    return strpos($key, 'g') !== false;
+});
+if ($result || !$result1 || !$result2 || $result3)
     echo 'Collection::all() failed.', PHP_EOL;
 ?>
 --EXPECT--
