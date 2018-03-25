@@ -18,8 +18,10 @@
 #define NEW_COLLECTION_OBJ(name) NEW_OBJ(name, collections_collection_ce)
 #define NEW_PAIR_OBJ(name) NEW_OBJ(name, collections_pair_ce)
 
-#define IS_COLLECTION(zval) \
-    Z_TYPE_P(elements) == IS_OBJECT && Z_OBJCE_P(elements) == collections_collection_ce
+#define IS_COLLECTION_P(zval) \
+    Z_TYPE_P(zval) == IS_OBJECT && Z_OBJCE_P(zval) == collections_collection_ce
+#define IS_PAIR(zval) \
+    Z_TYPE(zval) == IS_OBJECT && Z_OBJCE(zval) == collections_pair_ce
 
 #define OBJ_PROPERTY_UPDATE(obj, property_name, value) \
     zend_update_property_ex(zend_get_executed_scope(), obj, property_name, value)
@@ -34,11 +36,26 @@
 #define PAIR_FETCH_FIRST(obj) OBJ_PROPERTY_FETCH(obj, pair_first_name)
 #define PAIR_FETCH_SECOND(obj) OBJ_PROPERTY_FETCH(obj, pair_second_name)
 
+#define INIT_FCI() \
+    zval params[2], rv, retval; \
+    fci.param_count = 2; \
+    fci.retval = &retval; \
+    fci.params = params;
+
+#define CALLBACK_PASS_PAIR(bucket) \
+    ZVAL_COPY(&params[0], &(bucket)->val); \
+    if ((bucket)->key) \
+        ZVAL_STR(&params[1], (bucket)->key); \
+    else \
+        ZVAL_LONG(&params[1], (bucket)->h)
+
 #define PHP_COLLECTIONS_ERROR(type, msg) php_error_docref(NULL, type, msg)
 #define ERR_BAD_ARGUMENT_TYPE() PHP_COLLECTIONS_ERROR(E_WARNING, "Bad argument type")
+#define ERR_BAD_KEY_TYPE() PHP_COLLECTIONS_ERROR(E_WARNING, "Key must be integer or string")
+#define ERR_BAD_CALLBACK_RETVAL() PHP_COLLECTIONS_ERROR(E_WARNING, "Bad callback return value")
 
 #define ELEMENTS_VALIDATE(elements) \
-    if (IS_COLLECTION(elements)) { \
+    if (IS_COLLECTION_P(elements)) { \
         zval rv; \
         (elements) = COLLECTION_FETCH(elements); \
     } else if (UNEXPECTED(Z_TYPE_P(elements) != IS_ARRAY)) { \
@@ -46,19 +63,24 @@
         RETVAL_NULL(); \
     }
 
+#define ARRAY_NEW(name, size) \
+    zend_array* (name) = (zend_array*)emalloc(sizeof(zend_array)); \
+    zend_hash_init(name, size, NULL, ZVAL_PTR_DTOR, 0)
+#define ARRAY_NEW_EX(name, other) \
+    ARRAY_NEW(name, zend_hash_num_elements(Z_ARRVAL_P(other)))
 #define ARRAY_CLONE(dest, src) \
-    zend_array (dest); \
-    zend_hash_init(&(dest), zend_hash_num_elements(Z_ARRVAL_P(src)), NULL, ZVAL_PTR_DTOR, 0); \
-    zend_hash_copy(&(dest), Z_ARRVAL_P(src), NULL)
+    ARRAY_NEW_EX(dest, src); \
+    zend_hash_copy(dest, Z_ARRVAL_P(src), NULL)
 
 #define RETVAL_NEW_COLLECTION(collection) \
     do { \
         NEW_COLLECTION_OBJ(obj); \
-        zval retval; \
-        ZVAL_OBJ(&retval, obj); \
-        zval property; \
-        ZVAL_ARR(&property, collection); \
-        COLLECTION_UPDATE(&retval, &property); \
+        zval _retval; \
+        ZVAL_OBJ(&_retval, obj); \
+        zval _property; \
+        ZVAL_ARR(&_property, collection); \
+        COLLECTION_UPDATE(&_retval, &_property); \
+        zval_ptr_dtor(&_property); \
         RETVAL_OBJ(obj); \
     } while (0)
 
@@ -86,18 +108,13 @@ PHP_METHOD(Collection, all)
     ZEND_PARSE_PARAMETERS_START(1, 1)
         Z_PARAM_FUNC(fci, fcc)
     ZEND_PARSE_PARAMETERS_END();
-    zval params[2], rv, retval;
-    fci.param_count = 2;
-    fci.retval = &retval;
-    fci.params = params;
+    INIT_FCI();
     zval* current = COLLECTION_FETCH_EX();
     ZEND_HASH_FOREACH_BUCKET(Z_ARRVAL_P(current), Bucket* bucket)
-        ZVAL_COPY(&params[0], &bucket->val);
-        if (bucket->key)
-            ZVAL_STR(&params[1], bucket->key);
-        else
-            ZVAL_LONG(&params[1], bucket->h);
+        ZVAL_COPY_VALUE(&params[0], &bucket->val);
+        CALLBACK_PASS_PAIR(bucket);
         zend_call_function(&fci, &fcc);
+        zval_ptr_dtor(&params[0]);
         if (Z_TYPE(retval) == IS_FALSE)
             RETURN_FALSE;
     ZEND_HASH_FOREACH_END();
@@ -110,19 +127,14 @@ PHP_METHOD(Collection, any)
     zend_fcall_info_cache fcc;
     ZEND_PARSE_PARAMETERS_START(1, 1)
         Z_PARAM_FUNC(fci, fcc)
-        ZEND_PARSE_PARAMETERS_END();
-    zval params[2], rv, retval;
-    fci.param_count = 2;
-    fci.retval = &retval;
-    fci.params = params;
+    ZEND_PARSE_PARAMETERS_END();
+    INIT_FCI();
     zval* current = COLLECTION_FETCH_EX();
     ZEND_HASH_FOREACH_BUCKET(Z_ARRVAL_P(current), Bucket* bucket)
-        ZVAL_COPY(&params[0], &bucket->val);
-        if (bucket->key)
-            ZVAL_STR(&params[1], bucket->key);
-        else
-            ZVAL_LONG(&params[1], bucket->h);
+        ZVAL_COPY_VALUE(&params[0], &bucket->val);
+        CALLBACK_PASS_PAIR(bucket);
         zend_call_function(&fci, &fcc);
+        zval_ptr_dtor(&params[0]);
         if (Z_TYPE(retval) == IS_TRUE)
             RETURN_TRUE;
     ZEND_HASH_FOREACH_END();
@@ -131,7 +143,33 @@ PHP_METHOD(Collection, any)
 
 PHP_METHOD(Collection, associate)
 {
-    
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    INIT_FCI();
+    zval* current = COLLECTION_FETCH_EX();
+    ARRAY_NEW_EX(new_collection, current);
+    ZEND_HASH_FOREACH_BUCKET(Z_ARRVAL_P(current), Bucket* bucket)
+        ZVAL_COPY_VALUE(&params[0], &bucket->val);
+        CALLBACK_PASS_PAIR(bucket);
+        zend_call_function(&fci, &fcc);
+        zval_ptr_dtor(&params[0]);
+        if (EXPECTED(IS_PAIR(retval))) {
+            zval* key = PAIR_FETCH_FIRST(&retval);
+            zval* value = PAIR_FETCH_SECOND(&retval);
+            if (Z_TYPE_P(key) == IS_LONG)
+                zend_hash_index_add(new_collection, Z_LVAL_P(key), value);
+            else if (Z_TYPE_P(key) == IS_STRING)
+                zend_hash_add(new_collection, Z_STR_P(key), value);
+            else
+                ERR_BAD_KEY_TYPE();
+            zval_ptr_dtor(&retval);
+        } else
+            ERR_BAD_CALLBACK_RETVAL();
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NEW_COLLECTION(new_collection);
 }
 
 PHP_METHOD(Collection, associateTo)

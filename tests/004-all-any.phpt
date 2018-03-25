@@ -1,12 +1,8 @@
 --TEST--
-Test Collection::all().
+Test Collection::all() and Collection::any().
 --FILE--
 <?php
-$collection = Collection::init([
-    "abc" => 12,
-    "de" => 5,
-    "f" => 100
-]);
+$collection = Collection::init(['abc' => 12, 'de' => 5, 'f' => 100]);
 $result = $collection->all(function ($value) {
     return $value < 100;
 });
