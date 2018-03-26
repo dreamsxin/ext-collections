@@ -23,18 +23,20 @@
 #define IS_PAIR(zval) \
     EXPECTED(Z_TYPE(zval) == IS_OBJECT) && EXPECTED(Z_OBJCE(zval) == collections_pair_ce)
 
-#define OBJ_PROPERTY_UPDATE(obj, property_name, value) \
-    zend_update_property_ex(zend_get_executed_scope(), obj, property_name, value)
-#define OBJ_PROPERTY_FETCH(obj, property_name) \
-    zend_read_property_ex(zend_get_executed_scope(), obj, property_name, 1, &rv)
-#define COLLECTION_UPDATE(obj, value) OBJ_PROPERTY_UPDATE(obj, collection_property_name, value)
+#define OBJ_PROPERTY_UPDATE(obj, property_name, name_len, value) \
+    zend_update_property(zend_get_executed_scope(), obj, property_name, name_len, value)
+#define OBJ_PROPERTY_FETCH(obj, property_name, name_len) \
+    zend_read_property(zend_get_executed_scope(), obj, property_name, name_len, 1, &rv)
+#define COLLECTION_UPDATE(obj, value) OBJ_PROPERTY_UPDATE(obj, "_a", sizeof "_a" - 1, value)
 #define COLLECTION_UPDATE_EX(value) COLLECTION_UPDATE(getThis(), value)
-#define COLLECTION_FETCH(obj) OBJ_PROPERTY_FETCH(obj, collection_property_name)
+#define COLLECTION_FETCH(obj) OBJ_PROPERTY_FETCH(obj, "_a", sizeof "_a" - 1)
 #define COLLECTION_FETCH_EX() COLLECTION_FETCH(getThis())
-#define PAIR_UPDATE_FIRST(obj, value) OBJ_PROPERTY_UPDATE(obj, pair_first_name, value)
-#define PAIR_UPDATE_SECOND(obj, value) OBJ_PROPERTY_UPDATE(obj, pair_second_name, value)
-#define PAIR_FETCH_FIRST(obj) OBJ_PROPERTY_FETCH(obj, pair_first_name)
-#define PAIR_FETCH_SECOND(obj) OBJ_PROPERTY_FETCH(obj, pair_second_name)
+#define PAIR_UPDATE_FIRST(obj, value) \
+    OBJ_PROPERTY_UPDATE(obj, "first", sizeof "first" - 1, value)
+#define PAIR_UPDATE_SECOND(obj, value) \
+    OBJ_PROPERTY_UPDATE(obj, "second", sizeof "second" - 1, value)
+#define PAIR_FETCH_FIRST(obj) OBJ_PROPERTY_FETCH(obj, "first", sizeof "first" - 1)
+#define PAIR_FETCH_SECOND(obj) OBJ_PROPERTY_FETCH(obj, "second", sizeof "second" - 1)
 
 #define INIT_FCI() \
     zval params[2], rv, retval; \

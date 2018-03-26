@@ -23,26 +23,15 @@ zend_class_entry* collections_pair_ce;
 
 PHP_MINIT_FUNCTION(collections)
 {
-    collection_property_name = zend_string_init("_a", strlen("_a"), 1);
-    pair_first_name = zend_string_init("first", strlen("first"), 1);
-    pair_second_name = zend_string_init("second", strlen("second"), 1);
     zend_class_entry collection_ce;
-    INIT_CLASS_ENTRY_EX(collection_ce, "Collection", strlen("Collection"), collection_methods);
+    INIT_CLASS_ENTRY_EX(collection_ce, "Collection", sizeof "Collection" - 1, collection_methods);
     collections_collection_ce = zend_register_internal_class(&collection_ce);
-    zend_declare_property_null(collections_collection_ce, "_a", strlen("_a"), ZEND_ACC_PRIVATE);
+    zend_declare_property_null(collections_collection_ce, "_a", sizeof "_a" - 1, ZEND_ACC_PRIVATE);
     zend_class_entry pair_ce;
-    INIT_CLASS_ENTRY_EX(pair_ce, "Pair", strlen("Pair"), pair_methods);
+    INIT_CLASS_ENTRY_EX(pair_ce, "Pair", sizeof "Pair" - 1, pair_methods);
     collections_pair_ce = zend_register_internal_class(&pair_ce);
-    zend_declare_property_null(collections_pair_ce, "first", strlen("first"), ZEND_ACC_PUBLIC);
-    zend_declare_property_null(collections_pair_ce, "second", strlen("second"), ZEND_ACC_PUBLIC);
-    return SUCCESS;
-}
-
-PHP_MSHUTDOWN_FUNCTION(collections)
-{
-    zend_string_release(collection_property_name);
-    zend_string_release(pair_first_name);
-    zend_string_release(pair_second_name);
+    zend_declare_property_null(collections_pair_ce, "first", sizeof "first" - 1, ZEND_ACC_PUBLIC);
+    zend_declare_property_null(collections_pair_ce, "second", sizeof "second" - 1, ZEND_ACC_PUBLIC);
     return SUCCESS;
 }
 
@@ -66,7 +55,7 @@ zend_module_entry collections_module_entry = {
     "collections",
     NULL,
     PHP_MINIT(collections),
-    PHP_MSHUTDOWN(collections),
+    NULL,
     PHP_RINIT(collections),
     NULL,
     PHP_MINFO(collections),
