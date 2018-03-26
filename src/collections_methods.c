@@ -24,9 +24,9 @@
     EXPECTED(Z_TYPE(zval) == IS_OBJECT) && EXPECTED(Z_OBJCE(zval) == collections_pair_ce)
 
 #define OBJ_PROPERTY_UPDATE(obj, property_name, name_len, value) \
-    zend_update_property(zend_get_executed_scope(), obj, property_name, name_len, value)
+    zend_update_property(collections_collection_ce, obj, property_name, name_len, value)
 #define OBJ_PROPERTY_FETCH(obj, property_name, name_len) \
-    zend_read_property(zend_get_executed_scope(), obj, property_name, name_len, 1, &rv)
+    zend_read_property(collections_collection_ce, obj, property_name, name_len, 1, &rv)
 #define COLLECTION_UPDATE(obj, value) OBJ_PROPERTY_UPDATE(obj, "_a", sizeof "_a" - 1, value)
 #define COLLECTION_UPDATE_EX(value) COLLECTION_UPDATE(getThis(), value)
 #define COLLECTION_FETCH(obj) OBJ_PROPERTY_FETCH(obj, "_a", sizeof "_a" - 1)
