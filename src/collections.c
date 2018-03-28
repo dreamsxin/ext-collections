@@ -26,7 +26,7 @@ PHP_MINIT_FUNCTION(collections)
     zend_class_entry collection_ce;
     INIT_CLASS_ENTRY_EX(collection_ce, "Collection", sizeof "Collection" - 1, collection_methods);
     collections_collection_ce = zend_register_internal_class(&collection_ce);
-    zend_declare_property_null(collections_collection_ce, "_a", sizeof "_a" - 1, ZEND_ACC_PRIVATE);
+    zend_declare_property_null(collections_collection_ce, "_", sizeof "_" - 1, ZEND_ACC_PRIVATE);
     zend_class_entry pair_ce;
     INIT_CLASS_ENTRY_EX(pair_ce, "Pair", sizeof "Pair" - 1, pair_methods);
     collections_pair_ce = zend_register_internal_class(&pair_ce);

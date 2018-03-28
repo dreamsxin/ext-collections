@@ -30,14 +30,15 @@ $employees = [
 // sorted by the descending order of their age.
 $names = Collection::init($employees)
     ->filter(function ($it) {
-        return $it->get('sex') == 'male';
+        return $it['sex'] == 'male';
     })
     ->sortedByDescending(function ($it) {
-        return $it->get('age');
+        return $it['age'];
     })
     ->map(function ($it) {
-        return $it->get('name');
+        return $it['name'];
     })
     ->toArray();
+// You got $names == ['David', 'Benjamin', 'Bob'].
 ```
 

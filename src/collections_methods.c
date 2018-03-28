@@ -23,20 +23,18 @@
 #define IS_PAIR(zval) \
     EXPECTED(Z_TYPE(zval) == IS_OBJECT) && EXPECTED(Z_OBJCE(zval) == collections_pair_ce)
 
-#define OBJ_PROPERTY_UPDATE(obj, property_name, name_len, value) \
-    zend_update_property(collections_collection_ce, obj, property_name, name_len, value)
-#define OBJ_PROPERTY_FETCH(obj, property_name, name_len) \
-    zend_read_property(collections_collection_ce, obj, property_name, name_len, 1, &rv)
-#define COLLECTION_UPDATE(obj, value) OBJ_PROPERTY_UPDATE(obj, "_a", sizeof "_a" - 1, value)
+#define OBJ_PROPERTY_UPDATE(ce, obj, property_name, value) \
+    zend_update_property(ce, obj, #property_name, sizeof #property_name - 1, value)
+#define OBJ_PROPERTY_FETCH(ce, obj, property_name) \
+    zend_read_property(ce, obj, #property_name, sizeof #property_name - 1, 1, &rv)
+#define COLLECTION_UPDATE(obj, value) OBJ_PROPERTY_UPDATE(collections_collection_ce, obj, _, value)
 #define COLLECTION_UPDATE_EX(value) COLLECTION_UPDATE(getThis(), value)
-#define COLLECTION_FETCH(obj) OBJ_PROPERTY_FETCH(obj, "_a", sizeof "_a" - 1)
+#define COLLECTION_FETCH(obj) OBJ_PROPERTY_FETCH(collections_collection_ce, obj, _)
 #define COLLECTION_FETCH_EX() COLLECTION_FETCH(getThis())
-#define PAIR_UPDATE_FIRST(obj, value) \
-    OBJ_PROPERTY_UPDATE(obj, "first", sizeof "first" - 1, value)
-#define PAIR_UPDATE_SECOND(obj, value) \
-    OBJ_PROPERTY_UPDATE(obj, "second", sizeof "second" - 1, value)
-#define PAIR_FETCH_FIRST(obj) OBJ_PROPERTY_FETCH(obj, "first", sizeof "first" - 1)
-#define PAIR_FETCH_SECOND(obj) OBJ_PROPERTY_FETCH(obj, "second", sizeof "second" - 1)
+#define PAIR_UPDATE_FIRST(obj, value) OBJ_PROPERTY_UPDATE(collections_pair_ce, obj, first, value)
+#define PAIR_UPDATE_SECOND(obj, value) OBJ_PROPERTY_UPDATE(collections_pair_ce, obj, second, value)
+#define PAIR_FETCH_FIRST(obj) OBJ_PROPERTY_FETCH(collections_pair_ce, obj, first)
+#define PAIR_FETCH_SECOND(obj)  OBJ_PROPERTY_FETCH(collections_pair_ce, obj, second)
 
 #define INIT_FCI() \
     zval params[2], rv, retval; \
@@ -50,6 +48,16 @@
         ZVAL_STR(&params[1], (bucket)->key); \
     else \
         ZVAL_LONG(&params[1], (bucket)->h)
+
+#define INIT_EQUAL_CHECK_FUNC(val) \
+    int (*equal_check_func)(zval*, zval*); \
+    if (Z_TYPE_P(element) == IS_LONG) \
+        equal_check_func = fast_equal_check_long; \
+    else if (Z_TYPE_P(element) == IS_STRING) \
+        equal_check_func = fast_equal_check_string; \
+    else \
+        equal_check_func = fast_equal_check_function;
+
 
 #define PHP_COLLECTIONS_ERROR(type, msg) php_error_docref(NULL, type, msg)
 #define ERR_BAD_ARGUMENT_TYPE() PHP_COLLECTIONS_ERROR(E_WARNING, "Bad argument type")
@@ -264,12 +272,42 @@ PHP_METHOD(Collection, associateByTo)
 
 PHP_METHOD(Collection, average)
 {
-    
+    zval rv;
+    zval* current = COLLECTION_FETCH_EX();
+    double sum = 0;
+    ZEND_HASH_FOREACH_VAL_IND(Z_ARRVAL_P(current), zval* val)
+        if (Z_TYPE_P(val) == IS_LONG)
+            sum += Z_LVAL_P(val);
+        else if (Z_TYPE_P(val) == IS_DOUBLE)
+            sum += Z_DVAL_P(val);
+        else {
+            ERR_BAD_ARGUMENT_TYPE();
+            RETURN_NULL();
+        }
+    ZEND_HASH_FOREACH_END();
+    RETVAL_DOUBLE(sum / zend_hash_num_elements(Z_ARRVAL_P(current)));
 }
 
 PHP_METHOD(Collection, containsAll)
 {
-    
+    zval* elements;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(elements)
+    ZEND_PARSE_PARAMETERS_END();
+    ELEMENTS_VALIDATE(elements);
+    zval rv;
+    zval* current = COLLECTION_FETCH_EX();
+    ZEND_HASH_FOREACH_VAL_IND(Z_ARRVAL_P(elements), zval* element)
+        INIT_EQUAL_CHECK_FUNC(element);
+        int result = 0;
+        ZEND_HASH_FOREACH_VAL_IND(Z_ARRVAL_P(current), zval* val)
+            if (result = equal_check_func(element, val))
+                break;
+        ZEND_HASH_FOREACH_END();
+        if (result == 0)
+            RETURN_FALSE;
+    ZEND_HASH_FOREACH_END();
+    RETURN_TRUE;
 }
 
 PHP_METHOD(Collection, containsKey)
