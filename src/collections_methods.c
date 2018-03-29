@@ -64,6 +64,7 @@
 #define ERR_BAD_KEY_TYPE() PHP_COLLECTIONS_ERROR(E_WARNING, "Key must be integer or string")
 #define ERR_BAD_CALLBACK_RETVAL() PHP_COLLECTIONS_ERROR(E_WARNING, "Bad callback return value")
 #define ERR_BAD_SIZE() PHP_COLLECTIONS_ERROR(E_WARNING, "Size must be non-negative")
+#define ERR_NOT_ARITHMETIC() PHP_COLLECTIONS_ERROR(E_WARNING, "Elements should be int or double")
 
 #define ELEMENTS_VALIDATE(elements) \
     if (IS_COLLECTION_P(elements)) { \
@@ -289,7 +290,7 @@ PHP_METHOD(Collection, average)
         else if (Z_TYPE_P(val) == IS_DOUBLE)
             sum += Z_DVAL_P(val);
         else {
-            ERR_BAD_ARGUMENT_TYPE();
+            ERR_NOT_ARITHMETIC();
             RETURN_NULL();
         }
     ZEND_HASH_FOREACH_END();
