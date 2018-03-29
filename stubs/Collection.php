@@ -90,7 +90,7 @@ class Collection implements ArrayAccess, Countable
     function containsAll($other) {}
 
     /**
-     * Checks if the array contains the given key.
+     * Checks if the collection contains the given key.
      *
      * @param int|string $key
      * @return bool
@@ -98,7 +98,7 @@ class Collection implements ArrayAccess, Countable
     function containsKey($key) {}
 
     /**
-     * Check if the array maps one or more keys to the specified value.
+     * Check if the collection maps one or more keys to the specified value.
      *
      * @param mixed $element
      * @return bool
@@ -106,16 +106,15 @@ class Collection implements ArrayAccess, Countable
     function containsValue($element) {}
 
     /**
-     * Returns new array which is a copy of the original array.
+     * Returns new collection which is a copy of the original collection.
      *
-     * @param array|Collection $elements
      * @param int $new_size[optional]
      * @return Collection
      */
-    function copyOf($elements, $new_size) {}
+    function copyOf($new_size) {}
 
     /**
-     * Returns new array which is a copy of range of original array.
+     * Returns new collection which is a copy of range of original collection.
      *
      * @param int $from_index
      * @param int $to_index
@@ -124,22 +123,22 @@ class Collection implements ArrayAccess, Countable
     function copyOfRange($from_index, $to_index) {}
 
     /**
-     * Returns the number of elements in this array.
+     * Returns the number of elements in this collection.
      *
      * @return int
      */
     function count() {}
 
     /**
-     * Returns a collection containing only distinct elements from the given array.
+     * Returns a collection containing only distinct elements from the given collection.
      *
      * @return Collection
      */
     function distinct() {}
 
     /**
-     * Returns a collection containing only elements from the given array having distinct keys
-     * returned by the given selector function.
+     * Returns a collection containing only elements from the given collection having distinct
+     * keys returned by the given selector function.
      *
      * @param callable $selector ($value, $key) -> $key
      * @return Collection
@@ -181,7 +180,7 @@ class Collection implements ArrayAccess, Countable
     function dropWhile($predicate) {}
 
     /**
-     * Fills original array with the provided value.
+     * Fills original collection with the provided value.
      *
      * @param mixed $element
      * @param int $from_index[optional]
@@ -306,7 +305,7 @@ class Collection implements ArrayAccess, Countable
 
     /**
      * Returns an element at the given key or the result of calling the `default` function
-     * if the index is out of bounds of this array.
+     * if the index is out of bounds of this collection.
      *
      * @param int|string $key
      * @param callable $default[optional] ($key) -> $value
@@ -316,7 +315,7 @@ class Collection implements ArrayAccess, Countable
 
     /**
      * Groups values returned by the value_transform function applied to each element of the
-     * original array by the key returned by the given key_selector function applied to the element
+     * original collection by the key returned by the given key_selector function applied to the element
      * and returns a collection where each group key is associated with a list of corresponding values.
      *
      * @param callable $key_selector ($value, $key) -> $new_key
@@ -338,7 +337,7 @@ class Collection implements ArrayAccess, Countable
     function groupByTo($destination, $key_selector, $value_transform) {}
 
     /**
-     * Returns first key of element, or null if the array does not contain element.
+     * Returns first key of element, or null if the collection does not contain element.
      *
      * @param mixed $element
      * @return int|string|null
@@ -346,8 +345,8 @@ class Collection implements ArrayAccess, Countable
     function indexOf($element) {}
 
     /**
-     * Returns key of the first element matching the given predicate, or null if the array does
-     * not contain such element.
+     * Returns key of the first element matching the given predicate, or null if the collection
+     * does not contain such element.
      *
      * @param callable $predicate ($value) -> bool
      * @return int|string|null
@@ -355,8 +354,8 @@ class Collection implements ArrayAccess, Countable
     function indexOfFirst($predicate) {}
 
     /**
-     * Returns key of the last element matching the given predicate, or null if the array does
-     * not contain such element.
+     * Returns key of the last element matching the given predicate, or null if the collection
+     * does not contain such element.
      *
      * @param callable $predicate ($value) -> bool
      * @return int|string|null
@@ -380,14 +379,14 @@ class Collection implements ArrayAccess, Countable
     function intersect($other) {}
 
     /**
-     * Returns true if the array is empty.
+     * Returns true if the collection is empty.
      *
      * @return bool
      */
     function isEmpty() {}
 
     /**
-     * Returns true if the array is not empty.
+     * Returns true if the collection is not empty.
      */
     function isNotEmpty() {}
 
@@ -407,7 +406,7 @@ class Collection implements ArrayAccess, Countable
     function last($predicate) {}
 
     /**
-     * Returns last key of element, or null if the array does not contain element.
+     * Returns last key of element, or null if the collection does not contain element.
      *
      * @param mixed $element
      * @return int|string|null

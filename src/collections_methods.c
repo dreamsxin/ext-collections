@@ -63,6 +63,7 @@
 #define ERR_BAD_ARGUMENT_TYPE() PHP_COLLECTIONS_ERROR(E_WARNING, "Bad argument type")
 #define ERR_BAD_KEY_TYPE() PHP_COLLECTIONS_ERROR(E_WARNING, "Key must be integer or string")
 #define ERR_BAD_CALLBACK_RETVAL() PHP_COLLECTIONS_ERROR(E_WARNING, "Bad callback return value")
+#define ERR_BAD_SIZE() PHP_COLLECTIONS_ERROR(E_WARNING, "Size must be non-negative")
 
 #define ELEMENTS_VALIDATE(elements) \
     if (IS_COLLECTION_P(elements)) { \
@@ -94,6 +95,11 @@
         RETVAL_OBJ(obj); \
     } while (0)
 
+#define RETURN_NEW_COLLECTION(collection) { \
+        RETVAL_NEW_COLLECTION(collection); \
+        return; \
+    }
+
 PHP_METHOD(Collection, __construct) {}
 
 PHP_METHOD(Collection, addAll)
@@ -105,9 +111,11 @@ PHP_METHOD(Collection, addAll)
     ELEMENTS_VALIDATE(elements);
     zval rv;
     zval* current = COLLECTION_FETCH_EX();
-    ZEND_HASH_FOREACH_VAL_IND(Z_ARRVAL_P(elements), zval* val)
-        zend_hash_next_index_insert(Z_ARRVAL_P(current), val);
-    ZEND_HASH_FOREACH_END();
+    ZEND_HASH_FILL_PACKED(Z_ARRVAL_P(current))
+        ZEND_HASH_FOREACH_VAL_IND(Z_ARRVAL_P(elements), zval* val)
+            ZEND_HASH_FILL_ADD(val);
+        ZEND_HASH_FOREACH_END();
+    ZEND_HASH_FILL_END();
 }
 
 PHP_METHOD(Collection, all)
@@ -312,17 +320,68 @@ PHP_METHOD(Collection, containsAll)
 
 PHP_METHOD(Collection, containsKey)
 {
-    
+    zval* key;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(key)
+    ZEND_PARSE_PARAMETERS_END();
+    zval rv;
+    zval* current = COLLECTION_FETCH_EX();
+    if (Z_TYPE_P(key) == IS_LONG)
+        RETURN_BOOL(zend_hash_index_exists(Z_ARRVAL_P(current), Z_LVAL_P(key)));
+    if (Z_TYPE_P(key) == IS_STRING)
+        RETURN_BOOL(zend_hash_exists(Z_ARRVAL_P(current), Z_STR_P(key)));
+    ERR_BAD_KEY_TYPE();
+    RETVAL_FALSE;
 }
 
 PHP_METHOD(Collection, containsValue)
 {
-    
+    zval* element;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(element)
+    ZEND_PARSE_PARAMETERS_END();
+    zval rv;
+    zval* current = COLLECTION_FETCH_EX();
+    INIT_EQUAL_CHECK_FUNC(element);
+    ZEND_HASH_FOREACH_VAL_IND(Z_ARRVAL_P(current), zval* val)
+        if (equal_check_func(element, val))
+            RETURN_TRUE;
+    ZEND_HASH_FOREACH_END();
+    RETURN_FALSE;
 }
 
 PHP_METHOD(Collection, copyOf)
 {
-    
+    zend_long new_size = -1;
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_LONG(new_size);
+    ZEND_PARSE_PARAMETERS_END();
+    zval rv;
+    zval* current = COLLECTION_FETCH_EX();
+    if (EX_NUM_ARGS() == 0) {
+        ARRAY_CLONE(new_collection, current);
+        RETURN_NEW_COLLECTION(new_collection);
+    }
+    if (UNEXPECTED(new_size < 0)) {
+        ERR_BAD_SIZE();
+        RETURN_NULL();
+    }
+    if (new_size == 0)
+    {
+        ARRAY_NEW(new_collection, 0);
+        RETURN_NEW_COLLECTION(new_collection);
+    }
+    ARRAY_NEW_EX(new_collection, current);
+    ZEND_HASH_FOREACH_BUCKET(Z_ARRVAL_P(current), Bucket* bucket)
+        if (bucket->key)
+            zend_hash_add(new_collection, bucket->key, &bucket->val);
+        else
+            zend_hash_index_add(new_collection, bucket->h, &bucket->val);
+        if (--new_size == 0)
+            break;
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NEW_COLLECTION(new_collection);
 }
 
 PHP_METHOD(Collection, copyOfRange)

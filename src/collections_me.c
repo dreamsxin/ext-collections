@@ -92,7 +92,6 @@ ZEND_BEGIN_ARG_INFO(associate_by_to_arginfo, 0)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO(copy_of_arginfo, 0)
-    ZEND_ARG_INFO(0, elements)
     ZEND_ARG_TYPE_INFO(0, new_size, IS_LONG, 0)
 ZEND_END_ARG_INFO()
 
