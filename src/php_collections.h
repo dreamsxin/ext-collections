@@ -20,6 +20,11 @@ extern zend_module_entry collections_module_entry;
 #define PHP_COLLECTIONS_API
 #endif
 
+#if PHP_VERSION_ID < 70300
+#define GC_ADDREF(p) ++GC_REFCOUNT(p)
+#define GC_DELREF(p) --GC_REFCOUNT(p)
+#endif
+
 extern zend_string* collection_property_name;
 extern zend_string* pair_first_name;
 extern zend_string* pair_second_name;

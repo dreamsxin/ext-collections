@@ -53,9 +53,9 @@
 
 #define INIT_EQUAL_CHECK_FUNC(val) \
     int (*equal_check_func)(zval*, zval*); \
-    if (Z_TYPE_P(element) == IS_LONG) \
+    if (Z_TYPE_P(val) == IS_LONG) \
         equal_check_func = fast_equal_check_long; \
-    else if (Z_TYPE_P(element) == IS_STRING) \
+    else if (Z_TYPE_P(val) == IS_STRING) \
         equal_check_func = fast_equal_check_string; \
     else \
         equal_check_func = fast_equal_check_function;
@@ -568,20 +568,13 @@ PHP_METHOD(Collection, init)
         Z_PARAM_OPTIONAL
         Z_PARAM_ZVAL(elements)
     ZEND_PARSE_PARAMETERS_END();
-    NEW_COLLECTION_OBJ(obj);
-    zval retval;
-    ZVAL_OBJ(&retval, obj);
     if (elements) {
         ELEMENTS_VALIDATE(elements);
-        COLLECTION_UPDATE(&retval, elements);
-    } else {
-        zval collection;
-        ZVAL_NEW_ARR(&collection);
-        zend_hash_init(Z_ARRVAL(collection), 0, NULL, ZVAL_PTR_DTOR, 0);
-        COLLECTION_UPDATE(&retval, &collection);
-        zval_ptr_dtor(&collection);
+        GC_ADDREF(Z_ARR_P(elements));
+        RETURN_NEW_COLLECTION(Z_ARRVAL_P(elements));
     }
-    RETVAL_OBJ(obj);
+    ARRAY_NEW(collection, 0);
+    RETVAL_NEW_COLLECTION(collection);
 }
 
 PHP_METHOD(Collection, intersect)
