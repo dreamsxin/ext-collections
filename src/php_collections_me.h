@@ -96,7 +96,6 @@ PHP_METHOD(Collection, reversed);
 PHP_METHOD(Collection, shuffle);
 PHP_METHOD(Collection, single);
 PHP_METHOD(Collection, slice);
-PHP_METHOD(Collection, sliceRange);
 PHP_METHOD(Collection, sort);
 PHP_METHOD(Collection, sortBy);
 PHP_METHOD(Collection, sortByDescending);

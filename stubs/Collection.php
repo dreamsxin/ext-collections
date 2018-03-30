@@ -117,10 +117,10 @@ class Collection implements ArrayAccess, Countable
      * Returns new collection which is a copy of range of original collection.
      *
      * @param int $from_index
-     * @param int $to_index
+     * @param int $num_elements
      * @return Collection
      */
-    function copyOfRange($from_index, $to_index) {}
+    function copyOfRange($from_index, $num_elements) {}
 
     /**
      * Returns the number of elements in this collection.
@@ -745,14 +745,6 @@ class Collection implements ArrayAccess, Countable
      * @param array|Collection $keys
      */
     function slice($keys) {}
-
-    /**
-     * Returns a collection containing elements at indices in the specified indices range.
-     *
-     * @param int $from_index
-     * @param int $to_index[optional]
-     */
-    function sliceRange($from_index, $to_index) {}
 
     /**
      * Sorts the collection in-place according to the natural order of its elements.

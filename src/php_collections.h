@@ -27,6 +27,10 @@ extern zend_string* pair_second_name;
 extern PHP_COLLECTIONS_API zend_class_entry* collections_collection_ce;
 extern PHP_COLLECTIONS_API zend_class_entry* collections_pair_ce;
 
+extern zend_object_handlers* collection_handlers;
+
+int count_collection(zval* obj, zend_long* count);
+
 extern const zend_function_entry collection_methods[];
 extern const zend_function_entry pair_methods[];
 

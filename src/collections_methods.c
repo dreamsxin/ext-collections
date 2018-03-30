@@ -9,14 +9,16 @@
 #include "php_collections.h"
 #include "php_collections_me.h"
 
-#define NEW_OBJ(name, ce) \
+#define NEW_OBJ(name, ce, object_handlers) \
     zend_object* (name) = (zend_object*)ecalloc(1, sizeof(zend_object) + \
         zend_object_properties_size(ce)); \
     zend_object_std_init(name, ce); \
     object_properties_init(name, ce); \
-    (name)->handlers = &std_object_handlers;
-#define NEW_COLLECTION_OBJ(name) NEW_OBJ(name, collections_collection_ce)
-#define NEW_PAIR_OBJ(name) NEW_OBJ(name, collections_pair_ce)
+    (name)->handlers = object_handlers;
+#define NEW_COLLECTION_OBJ(name) \
+    NEW_OBJ(name, collections_collection_ce, collection_handlers)
+#define NEW_PAIR_OBJ(name) \
+    NEW_OBJ(name, collections_pair_ce, &std_object_handlers)
 
 #define IS_COLLECTION_P(zval) \
     Z_TYPE_P(zval) == IS_OBJECT && Z_OBJCE_P(zval) == collections_collection_ce
@@ -58,12 +60,12 @@
     else \
         equal_check_func = fast_equal_check_function;
 
-
 #define PHP_COLLECTIONS_ERROR(type, msg) php_error_docref(NULL, type, msg)
 #define ERR_BAD_ARGUMENT_TYPE() PHP_COLLECTIONS_ERROR(E_WARNING, "Bad argument type")
 #define ERR_BAD_KEY_TYPE() PHP_COLLECTIONS_ERROR(E_WARNING, "Key must be integer or string")
 #define ERR_BAD_CALLBACK_RETVAL() PHP_COLLECTIONS_ERROR(E_WARNING, "Bad callback return value")
 #define ERR_BAD_SIZE() PHP_COLLECTIONS_ERROR(E_WARNING, "Size must be non-negative")
+#define ERR_BAD_INDEX() PHP_COLLECTIONS_ERROR(E_WARNING, "Index must be non-negative")
 #define ERR_NOT_ARITHMETIC() PHP_COLLECTIONS_ERROR(E_WARNING, "Elements should be int or double")
 
 #define ELEMENTS_VALIDATE(elements) \
@@ -100,6 +102,14 @@
         RETVAL_NEW_COLLECTION(collection); \
         return; \
     }
+
+int count_collection(zval* obj, zend_long* count)
+{
+    zval rv;
+    zval* current = COLLECTION_FETCH(obj);
+    *count = zend_hash_num_elements(Z_ARRVAL_P(current));
+    return SUCCESS;
+}
 
 PHP_METHOD(Collection, __construct) {}
 
@@ -387,12 +397,38 @@ PHP_METHOD(Collection, copyOf)
 
 PHP_METHOD(Collection, copyOfRange)
 {
-    
+    zend_long from_idx, num_elements;
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_LONG(from_idx)
+        Z_PARAM_LONG(num_elements)
+    ZEND_PARSE_PARAMETERS_END();
+    if (from_idx < 0) {
+        ERR_BAD_INDEX();
+        RETURN_NULL();
+    }
+    if (num_elements < 0) {
+        ERR_BAD_SIZE();
+        RETURN_NULL();
+    }
+    zval rv;
+    zval* current = COLLECTION_FETCH_EX();
+    ARRAY_NEW(new_collection, num_elements);
+    Bucket* bucket = Z_ARRVAL_P(current)->arData;
+    Bucket* end = bucket + Z_ARRVAL_P(current)->nNumUsed;
+    for (bucket += from_idx; num_elements > 0 && bucket < end; ++bucket, --num_elements) {
+        if (bucket->key)
+            zend_hash_add(new_collection, bucket->key, &bucket->val);
+        else
+            zend_hash_next_index_insert(new_collection, &bucket->val);
+    }
+    RETVAL_NEW_COLLECTION(new_collection);
 }
 
 PHP_METHOD(Collection, count)
 {
-    
+    zend_long count;
+    count_collection(getThis(), &count);
+    RETVAL_LONG(count);
 }
 
 PHP_METHOD(Collection, distinct)
@@ -779,11 +815,6 @@ PHP_METHOD(Collection, single)
 }
 
 PHP_METHOD(Collection, slice)
-{
-    
-}
-
-PHP_METHOD(Collection, sliceRange)
 {
     
 }
