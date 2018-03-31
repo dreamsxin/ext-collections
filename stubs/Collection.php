@@ -581,21 +581,33 @@ class Collection implements ArrayAccess, Countable
     function none($predicate) {}
 
     /**
+     * This method is implemented in handlers.unset_dimension.
+     * There's no method with name 'offsetUnset'.
+     *
      * @internal
      */
     function offsetUnset($key) {}
 
     /**
+     * This method is implemented in handlers.write_dimension.
+     * There's no method with name 'offsetSet'.
+     *
      * @internal
      */
     function offsetSet($key, $value) {}
 
     /**
+     * This method is implemented in handlers.read_dimension.
+     * There's no method with name 'offsetGet'.
+     *
      * @internal
      */
     function offsetGet($key) {}
 
     /**
+     * This method is implemented in handlers.has_dimension.
+     * There's no method with name 'offsetExists'.
+     *
      * @internal
      */
     function offsetExists($key) {}

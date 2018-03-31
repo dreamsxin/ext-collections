@@ -111,6 +111,54 @@ int count_collection(zval* obj, zend_long* count)
     return SUCCESS;
 }
 
+int collection_offset_exists(zval* object, zval* offset, int check_empty)
+{
+    zval rv;
+    zval* current = COLLECTION_FETCH(object);
+    if (check_empty)
+        return zend_hash_num_elements(Z_ARRVAL_P(current)) == 0;
+    if (Z_TYPE_P(offset) == IS_LONG)
+        return zend_hash_index_exists(Z_ARRVAL_P(current), Z_LVAL_P(offset));
+    if (Z_TYPE_P(offset) == IS_STRING)
+        return zend_hash_exists(Z_ARRVAL_P(current), Z_STR_P(offset));
+    return 0;
+}
+
+void collection_offset_set(zval* object, zval* offset, zval* value)
+{
+    zval rv;
+    zval* current = COLLECTION_FETCH(object);
+    if (Z_TYPE_P(offset) == IS_LONG)
+        zend_hash_index_update(Z_ARRVAL_P(current), Z_LVAL_P(offset), value);
+    else if (Z_TYPE_P(offset) == IS_STRING)
+        zend_hash_update(Z_ARRVAL_P(current), Z_STR_P(offset), value);
+}
+
+zval* collection_offset_get(zval* object, zval* offset, int type, zval* retval)
+{
+    // Note that we don't handler type. So don't do any fancy things with Collection
+    // such as fetching a reference of a value, etc.
+    zval rv;
+    zval* current = COLLECTION_FETCH(object);
+    zval* found = NULL;
+    if (Z_TYPE_P(offset) == IS_LONG)
+        found = zend_hash_index_find(Z_ARRVAL_P(current), Z_LVAL_P(offset));
+    else if (Z_TYPE_P(offset) == IS_STRING)
+        found = zend_hash_find(Z_ARRVAL_P(current), Z_STR_P(offset));
+    ZVAL_COPY(retval, found);
+    return retval;
+}
+
+void collection_offset_unset(zval* object, zval* offset)
+{
+    zval rv;
+    zval* current = COLLECTION_FETCH(object);
+    if (Z_TYPE_P(offset) == IS_LONG)
+        zend_hash_index_del(Z_ARRVAL_P(current), Z_LVAL_P(offset));
+    else if (Z_TYPE_P(offset) == IS_STRING)
+        zend_hash_del(Z_ARRVAL_P(current), Z_STR_P(offset));
+}
+
 PHP_METHOD(Collection, __construct) {}
 
 PHP_METHOD(Collection, addAll)
@@ -698,26 +746,6 @@ PHP_METHOD(Collection, minusValuesAssign)
 }
 
 PHP_METHOD(Collection, none)
-{
-    
-}
-
-PHP_METHOD(Collection, offsetUnset)
-{
-    
-}
-
-PHP_METHOD(Collection, offsetSet)
-{
-    
-}
-
-PHP_METHOD(Collection, offsetGet)
-{
-    
-}
-
-PHP_METHOD(Collection, offsetExists)
 {
     
 }

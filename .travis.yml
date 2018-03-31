@@ -14,5 +14,4 @@ script:
   - phpize
   - ./configure
   - make
-  - echo $'n\n' | make test
-  - sudo make install
+  - make test

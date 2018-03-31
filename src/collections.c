@@ -40,6 +40,10 @@ PHP_MINIT_FUNCTION(collections)
     collection_handlers = (zend_object_handlers*)emalloc(sizeof(zend_object_handlers));
     memcpy(collection_handlers, &std_object_handlers, sizeof(zend_object_handlers));
     collection_handlers->count_elements = count_collection;
+    collection_handlers->unset_dimension = collection_offset_unset;
+    collection_handlers->write_dimension = collection_offset_set;
+    collection_handlers->read_dimension = collection_offset_get;
+    collection_handlers->has_dimension = collection_offset_exists;
     zend_class_entry pair_ce;
     INIT_CLASS_ENTRY_EX(pair_ce, "Pair", sizeof "Pair" - 1, pair_methods);
     collections_pair_ce = zend_register_internal_class(&pair_ce);

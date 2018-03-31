@@ -6,7 +6,6 @@
 
 #include <php.h>
 
-#include "php_collections.h"
 #include "php_collections_me.h"
 
 ZEND_BEGIN_ARG_INFO(action_arginfo, 0)
@@ -38,10 +37,6 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO(initial_operation_arginfo, 0)
     ZEND_ARG_INFO(0, initial)
     ZEND_ARG_CALLABLE_INFO(0, operation, 0)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO(key_arginfo, 0)
-    ZEND_ARG_INFO(0, key)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO(keys_arginfo, 0)
@@ -84,6 +79,10 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO(associate_by_to_arginfo, 0)
     ZEND_ARG_OBJ_INFO(0, destination, Collection, 0)
     ZEND_ARG_CALLABLE_INFO(0, key_selector, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(contains_key_arginfo, 0)
+    ZEND_ARG_INFO(0, key)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO(copy_of_arginfo, 0)
@@ -132,7 +131,7 @@ const zend_function_entry collection_methods[] = {
     PHP_ME(Collection, associateByTo, associate_by_to_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, average, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, containsAll, other_arginfo, ZEND_ACC_PUBLIC)
-    PHP_ME(Collection, containsKey, key_arginfo, ZEND_ACC_PUBLIC)
+    PHP_ME(Collection, containsKey, contains_key_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, containsValue, element_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, copyOf, copy_of_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, copyOfRange, copy_of_range_arginfo, ZEND_ACC_PUBLIC)
@@ -189,9 +188,6 @@ const zend_function_entry collection_methods[] = {
     PHP_ME(Collection, minusValues, elements_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, minusValuesAssign, elements_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, none, predicate_arginfo, ZEND_ACC_PUBLIC)
-    PHP_ME(Collection, offsetUnset, key_arginfo, ZEND_ACC_PUBLIC)
-    PHP_ME(Collection, offsetSet, key_value_arginfo, ZEND_ACC_PUBLIC)
-    PHP_ME(Collection, offsetExists, key_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, onEach, action_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, orEmpty, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, partition, predicate_arginfo, ZEND_ACC_PUBLIC)
