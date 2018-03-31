@@ -4,8 +4,8 @@
 // @Author CismonX
 //
 
-#ifndef PHP_COLLECTIONS_FE_H
-#define PHP_COLLECTIONS_FE_H
+#ifndef PHP_COLLECTIONS_ME_H
+#define PHP_COLLECTIONS_ME_H
 
 PHP_METHOD(Collection, __construct);
 PHP_METHOD(Collection, addAll);
@@ -114,4 +114,4 @@ PHP_METHOD(Collection, values);
 
 PHP_METHOD(Pair, __construct);
 
-#endif // !PHP_COLLECTIONS_FE_H
+#endif // !PHP_COLLECTIONS_ME_H

@@ -9,15 +9,13 @@ This PHP extension provides a set of useful functional-style operations on PHP a
 
 Method names and functionalities are inspired by [Kotlin.Collections](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/).
 
-It may take me a really long time to fully implement this extension. Feel free to contribute.
-
 ## 2. Documentation
 
 See [stubs](stubs/) directory for signature of all classes and methods of this extension, with PHPDoc.
 
 ## 3. Example
 
-Here is a simple example.
+Here is a simple example for how to work with arrays gracefully using this extension.
 
 ```php
 $employees = [
