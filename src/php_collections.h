@@ -25,10 +25,6 @@ extern zend_module_entry collections_module_entry;
 #define GC_DELREF(p) --GC_REFCOUNT(p)
 #endif
 
-extern zend_string* collection_property_name;
-extern zend_string* pair_first_name;
-extern zend_string* pair_second_name;
-
 extern PHP_COLLECTIONS_API zend_class_entry* collections_collection_ce;
 extern PHP_COLLECTIONS_API zend_class_entry* collections_pair_ce;
 

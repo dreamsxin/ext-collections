@@ -14,10 +14,6 @@
 
 #include "php_collections.h"
 
-zend_string* collection_property_name;
-zend_string* pair_first_name;
-zend_string* pair_second_name;
-
 zend_object_handlers* collection_handlers;
 
 zend_class_entry* collections_collection_ce;
