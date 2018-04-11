@@ -86,8 +86,16 @@
     ARRAY_NEW_EX(dest, src); \
     zend_hash_copy(dest, Z_ARRVAL_P(src), NULL)
 
+// Compatible with PHP 7.2
+#if PHP_VERSION_ID >= 70200
+#define ALLOW_COW_VIOLATION(ht) HT_ALLOW_COW_VIOLATION(ht)
+#else
+#define ALLOW_COW_VIOLATION(ht)
+#endif
+
 #define RETVAL_NEW_COLLECTION(collection) \
     do { \
+        ALLOW_COW_VIOLATION(collection); \
         NEW_COLLECTION_OBJ(obj); \
         zval _retval; \
         ZVAL_OBJ(&_retval, obj); \
@@ -136,7 +144,7 @@ void collection_offset_set(zval* object, zval* offset, zval* value)
 
 zval* collection_offset_get(zval* object, zval* offset, int type, zval* retval)
 {
-    // Note that we don't handler type. So don't do any fancy things with Collection
+    // Note that we don't handle type. So don't do any fancy things with Collection
     // such as fetching a reference of a value, etc.
     zval rv;
     zval* current = COLLECTION_FETCH(object);
@@ -491,12 +499,48 @@ PHP_METHOD(Collection, distinctBy)
 
 PHP_METHOD(Collection, drop)
 {
-    
+    zend_long n;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(n)
+    ZEND_PARSE_PARAMETERS_END();
+    if (n < 0) {
+        ERR_BAD_SIZE();
+        RETURN_NULL();
+    }
+    zval rv;
+    zval* current = COLLECTION_FETCH_EX();
+    ARRAY_CLONE(new_collection, current);
+    Bucket* bucket = new_collection->arData;
+    Bucket* end = bucket + new_collection->nNumUsed;
+    for (; n > 0 && bucket < end; ++bucket, --n) {
+        if (Z_REFCOUNTED_P(&bucket->val))
+            GC_ADDREF(Z_COUNTED_P(&bucket->val));
+        zend_hash_del_bucket(new_collection, bucket);
+    }
+    RETVAL_NEW_COLLECTION(new_collection);
 }
 
 PHP_METHOD(Collection, dropLast)
 {
-    
+    zend_long n;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_LONG(n)
+    ZEND_PARSE_PARAMETERS_END();
+    if (n < 0) {
+        ERR_BAD_SIZE();
+        RETURN_NULL();
+    }
+    zval rv;
+    zval* current = COLLECTION_FETCH_EX();
+    ARRAY_CLONE(new_collection, current);
+    unsigned idx = new_collection->nNumUsed;
+    for (; n > 0 && idx > 0; --idx, --n) {
+        Bucket* bucket = new_collection->arData + idx - 1;
+        if (Z_REFCOUNTED_P(&bucket->val))
+            GC_ADDREF(Z_COUNTED_P(&bucket->val));
+        zend_hash_del_bucket(new_collection, bucket);
+    }
+    RETVAL_NEW_COLLECTION(new_collection);
 }
 
 PHP_METHOD(Collection, dropLastWhile)
