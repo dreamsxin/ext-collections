@@ -470,12 +470,11 @@ PHP_METHOD(Collection, copyOfRange)
     ARRAY_NEW(new_collection, num_elements);
     Bucket* bucket = Z_ARRVAL_P(current)->arData;
     Bucket* end = bucket + Z_ARRVAL_P(current)->nNumUsed;
-    for (bucket += from_idx; num_elements > 0 && bucket < end; ++bucket, --num_elements) {
+    for (bucket += from_idx; num_elements > 0 && bucket < end; ++bucket, --num_elements)
         if (bucket->key)
             zend_hash_add(new_collection, bucket->key, &bucket->val);
         else
             zend_hash_next_index_insert(new_collection, &bucket->val);
-    }
     RETVAL_NEW_COLLECTION(new_collection);
 }
 
@@ -512,8 +511,8 @@ PHP_METHOD(Collection, drop)
     Bucket* bucket = new_collection->arData;
     Bucket* end = bucket + new_collection->nNumUsed;
     for (; n > 0 && bucket < end; ++bucket, --n) {
-        if (Z_REFCOUNTED_P(&bucket->val))
-            GC_ADDREF(Z_COUNTED_P(&bucket->val));
+        if (Z_REFCOUNTED(bucket->val))
+            GC_ADDREF(Z_COUNTED(bucket->val));
         zend_hash_del_bucket(new_collection, bucket);
     }
     RETVAL_NEW_COLLECTION(new_collection);
@@ -535,8 +534,8 @@ PHP_METHOD(Collection, dropLast)
     unsigned idx = new_collection->nNumUsed;
     for (; n > 0 && idx > 0; --idx, --n) {
         Bucket* bucket = new_collection->arData + idx - 1;
-        if (Z_REFCOUNTED_P(&bucket->val))
-            GC_ADDREF(Z_COUNTED_P(&bucket->val));
+        if (Z_REFCOUNTED(bucket->val))
+            GC_ADDREF(Z_COUNTED(bucket->val));
         zend_hash_del_bucket(new_collection, bucket);
     }
     RETVAL_NEW_COLLECTION(new_collection);
@@ -590,7 +589,27 @@ PHP_METHOD(Collection, dropWhile)
 
 PHP_METHOD(Collection, fill)
 {
-    
+    zval* element;
+    zend_long from_idx = 0;
+    zval rv;
+    zval* current = COLLECTION_FETCH_EX();
+    zend_long num_elements = zend_hash_num_elements(Z_ARRVAL_P(current) - from_idx);
+    ZEND_PARSE_PARAMETERS_START(1, 3)
+        Z_PARAM_ZVAL(element)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_LONG(from_idx)
+        Z_PARAM_LONG(num_elements)
+    ZEND_PARSE_PARAMETERS_END();
+    Bucket* bucket = Z_ARRVAL_P(current)->arData;
+    Bucket* end = bucket + Z_ARRVAL_P(current)->nNumUsed;
+    for (bucket += from_idx; num_elements > 0 && bucket < end; ++bucket, --num_elements) {
+        if (Z_REFCOUNTED(bucket->val))
+            GC_ADDREF(Z_COUNTED(bucket->val));
+        if (bucket->key)
+            zend_hash_update(Z_ARRVAL_P(current), bucket->key, element);
+        else
+            zend_hash_index_update(Z_ARRVAL_P(current), bucket->h, element);
+    }
 }
 
 PHP_METHOD(Collection, filter)
@@ -697,8 +716,8 @@ PHP_METHOD(Collection, init)
     ZEND_PARSE_PARAMETERS_END();
     if (elements) {
         ELEMENTS_VALIDATE(elements);
-        GC_ADDREF(Z_ARR_P(elements));
-        RETURN_NEW_COLLECTION(Z_ARRVAL_P(elements));
+        ARRAY_CLONE(new_collection, elements);
+        RETURN_NEW_COLLECTION(new_collection);
     }
     ARRAY_NEW(collection, 0);
     RETVAL_NEW_COLLECTION(collection);

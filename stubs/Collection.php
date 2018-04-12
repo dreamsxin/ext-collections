@@ -184,10 +184,10 @@ class Collection implements ArrayAccess, Countable
      *
      * @param mixed $element
      * @param int $from_index[optional]
-     * @param int $to_index[optional]
-     * @return Collection
+     * @param int $num_elements[optional]
+     * @return void
      */
-    function fill($element, $from_index, $to_index) {}
+    function fill($element, $from_index, $num_elements) {}
 
     /**
      * Returns a collection containing only elements matching the given predicate.

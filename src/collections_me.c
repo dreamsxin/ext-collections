@@ -97,7 +97,7 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO(fill_arginfo, 0)
     ZEND_ARG_INFO(0, element)
     ZEND_ARG_TYPE_INFO(0, from_index, IS_LONG, 0)
-    ZEND_ARG_TYPE_INFO(0, to_index, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, num_elements, IS_LONG, 0)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO(get_arginfo, 0)
