@@ -44,12 +44,15 @@
     fci.retval = &retval; \
     fci.params = params;
 
-#define CALLBACK_PASS_PAIR(bucket) \
+#define CALLBACK_KEYVAL_INVOKE(params, bucket) \
+    ZVAL_COPY_VALUE(&params[0], &bucket->val); \
     ZVAL_COPY(&params[0], &(bucket)->val); \
     if ((bucket)->key) \
         ZVAL_STR(&params[1], (bucket)->key); \
     else \
-        ZVAL_LONG(&params[1], (bucket)->h)
+        ZVAL_LONG(&params[1], (bucket)->h); \
+    zend_call_function(&fci, &fcc); \
+    zval_ptr_dtor(&params[0])
 
 #define INIT_EQUAL_CHECK_FUNC(val) \
     int (*equal_check_func)(zval*, zval*); \
@@ -195,10 +198,7 @@ PHP_METHOD(Collection, all)
     INIT_FCI();
     zval* current = COLLECTION_FETCH_EX();
     ZEND_HASH_FOREACH_BUCKET(Z_ARRVAL_P(current), Bucket* bucket)
-        ZVAL_COPY_VALUE(&params[0], &bucket->val);
-        CALLBACK_PASS_PAIR(bucket);
-        zend_call_function(&fci, &fcc);
-        zval_ptr_dtor(&params[0]);
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (!zend_is_true(&retval))
             RETURN_FALSE;
     ZEND_HASH_FOREACH_END();
@@ -215,10 +215,7 @@ PHP_METHOD(Collection, any)
     INIT_FCI();
     zval* current = COLLECTION_FETCH_EX();
     ZEND_HASH_FOREACH_BUCKET(Z_ARRVAL_P(current), Bucket* bucket)
-        ZVAL_COPY_VALUE(&params[0], &bucket->val);
-        CALLBACK_PASS_PAIR(bucket);
-        zend_call_function(&fci, &fcc);
-        zval_ptr_dtor(&params[0]);
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (zend_is_true(&retval))
             RETURN_TRUE;
     ZEND_HASH_FOREACH_END();
@@ -236,10 +233,7 @@ PHP_METHOD(Collection, associate)
     zval* current = COLLECTION_FETCH_EX();
     ARRAY_NEW_EX(new_collection, current);
     ZEND_HASH_FOREACH_BUCKET(Z_ARRVAL_P(current), Bucket* bucket)
-        ZVAL_COPY_VALUE(&params[0], &bucket->val);
-        CALLBACK_PASS_PAIR(bucket);
-        zend_call_function(&fci, &fcc);
-        zval_ptr_dtor(&params[0]);
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (IS_PAIR(retval)) {
             zval* key = PAIR_FETCH_FIRST(&retval);
             zval* value = PAIR_FETCH_SECOND(&retval);
@@ -271,10 +265,7 @@ PHP_METHOD(Collection, associateTo)
     zval* current = COLLECTION_FETCH_EX();
     zend_array* dest_arr = Z_ARRVAL_P(COLLECTION_FETCH(dest));
     ZEND_HASH_FOREACH_BUCKET(Z_ARRVAL_P(current), Bucket* bucket)
-        ZVAL_COPY_VALUE(&params[0], &bucket->val);
-        CALLBACK_PASS_PAIR(bucket);
-        zend_call_function(&fci, &fcc);
-        zval_ptr_dtor(&params[0]);
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (IS_PAIR(retval)) {
             zval* key = PAIR_FETCH_FIRST(&retval);
             zval* value = PAIR_FETCH_SECOND(&retval);
@@ -304,10 +295,7 @@ PHP_METHOD(Collection, associateBy)
     zval* current = COLLECTION_FETCH_EX();
     ARRAY_NEW_EX(new_collection, current);
     ZEND_HASH_FOREACH_BUCKET(Z_ARRVAL_P(current), Bucket* bucket)
-        ZVAL_COPY_VALUE(&params[0], &bucket->val);
-        CALLBACK_PASS_PAIR(bucket);
-        zend_call_function(&fci, &fcc);
-        zval_ptr_dtor(&params[0]);
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (Z_TYPE(retval) == IS_LONG)
             zend_hash_index_add(new_collection, Z_LVAL(retval), &bucket->val);
         else if (Z_TYPE(retval) == IS_STRING)
@@ -331,10 +319,7 @@ PHP_METHOD(Collection, associateByTo)
     zval* current = COLLECTION_FETCH_EX();
     zend_array* dest_arr = Z_ARRVAL_P(COLLECTION_FETCH(dest));
     ZEND_HASH_FOREACH_BUCKET(Z_ARRVAL_P(current), Bucket* bucket)
-        ZVAL_COPY_VALUE(&params[0], &bucket->val);
-        CALLBACK_PASS_PAIR(bucket);
-        zend_call_function(&fci, &fcc);
-        zval_ptr_dtor(&params[0]);
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (Z_TYPE(retval) == IS_LONG)
             zend_hash_index_add(dest_arr, Z_LVAL(retval), &bucket->val);
         else if (Z_TYPE(retval) == IS_STRING)
@@ -552,10 +537,7 @@ PHP_METHOD(Collection, dropLastWhile)
     zval* current = COLLECTION_FETCH_EX();
     ARRAY_CLONE(new_collection, current);
     ZEND_HASH_REVERSE_FOREACH_BUCKET(new_collection, Bucket* bucket)
-        ZVAL_COPY_VALUE(&params[0], &bucket->val);
-        CALLBACK_PASS_PAIR(bucket);
-        zend_call_function(&fci, &fcc);
-        zval_ptr_dtor(&params[0]);
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (zend_is_true(&retval))
             zend_hash_del_bucket(new_collection, bucket);
         else
@@ -575,10 +557,7 @@ PHP_METHOD(Collection, dropWhile)
     zval* current = COLLECTION_FETCH_EX();
     ARRAY_CLONE(new_collection, current);
     ZEND_HASH_FOREACH_BUCKET(new_collection, Bucket* bucket)
-        ZVAL_COPY_VALUE(&params[0], &bucket->val);
-        CALLBACK_PASS_PAIR(bucket);
-        zend_call_function(&fci, &fcc);
-        zval_ptr_dtor(&params[0]);
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (zend_is_true(&retval))
             zend_hash_del_bucket(new_collection, bucket);
         else
@@ -614,12 +593,44 @@ PHP_METHOD(Collection, fill)
 
 PHP_METHOD(Collection, filter)
 {
-    
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    INIT_FCI();
+    zval* current = COLLECTION_FETCH_EX();
+    ARRAY_NEW_EX(new_collection, current);
+    ZEND_HASH_FOREACH_BUCKET(Z_ARRVAL_P(current), Bucket* bucket)
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
+        if (zend_is_true(&retval))
+            if (bucket->key)
+                zend_hash_add(new_collection, bucket->key, &bucket->val);
+            else
+                zend_hash_index_add(new_collection, bucket->h, &bucket->val);
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NEW_COLLECTION(new_collection);
 }
 
 PHP_METHOD(Collection, filterNot)
 {
-    
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    INIT_FCI();
+    zval* current = COLLECTION_FETCH_EX();
+    ARRAY_NEW_EX(new_collection, current);
+    ZEND_HASH_FOREACH_BUCKET(Z_ARRVAL_P(current), Bucket* bucket)
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
+        if (!zend_is_true(&retval))
+            if (bucket->key)
+                zend_hash_add(new_collection, bucket->key, &bucket->val);
+            else
+                zend_hash_index_add(new_collection, bucket->h, &bucket->val);
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NEW_COLLECTION(new_collection);
 }
 
 PHP_METHOD(Collection, filterNotTo)
