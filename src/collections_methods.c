@@ -308,9 +308,9 @@ PHP_METHOD(Collection, associateBy)
 
 PHP_METHOD(Collection, associateByTo)
 {
+    zval* dest;
     zend_fcall_info fci;
     zend_fcall_info_cache fcc;
-    zval* dest;
     ZEND_PARSE_PARAMETERS_START(2, 2)
         Z_PARAM_OBJECT_OF_CLASS(dest, collections_collection_ce)
         Z_PARAM_FUNC(fci, fcc)
@@ -635,12 +635,48 @@ PHP_METHOD(Collection, filterNot)
 
 PHP_METHOD(Collection, filterNotTo)
 {
-    
+    zval* dest;
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_OBJECT_OF_CLASS(dest, collections_collection_ce)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    INIT_FCI();
+    zval* current = COLLECTION_FETCH_EX();
+    zend_array* dest_arr = Z_ARRVAL_P(COLLECTION_FETCH(dest));
+    ZEND_HASH_FOREACH_BUCKET(Z_ARRVAL_P(current), Bucket* bucket)
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
+        if (!zend_is_true(&retval))
+            if (bucket->key)
+                zend_hash_add(dest_arr, bucket->key, &bucket->val);
+            else
+                zend_hash_next_index_insert(dest_arr, &bucket->val);
+    ZEND_HASH_FOREACH_END();
+    RETVAL_ZVAL(dest, 1, 0);
 }
 
 PHP_METHOD(Collection, filterTo)
 {
-    
+    zval* dest;
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_OBJECT_OF_CLASS(dest, collections_collection_ce)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    INIT_FCI();
+    zval* current = COLLECTION_FETCH_EX();
+    zend_array* dest_arr = Z_ARRVAL_P(COLLECTION_FETCH(dest));
+    ZEND_HASH_FOREACH_BUCKET(Z_ARRVAL_P(current), Bucket* bucket)
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
+        if (zend_is_true(&retval))
+            if (bucket->key)
+                zend_hash_add(dest_arr, bucket->key, &bucket->val);
+            else
+                zend_hash_next_index_insert(dest_arr, &bucket->val);
+    ZEND_HASH_FOREACH_END();
+    RETVAL_ZVAL(dest, 1, 0);
 }
 
 PHP_METHOD(Collection, find)
