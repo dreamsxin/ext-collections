@@ -47,4 +47,4 @@ extern const zend_function_entry pair_methods[];
 ZEND_TSRMLS_CACHE_EXTERN()
 #endif
 
-#endif // !PHP_COLLECTIONS_H
+#endif // !PHP_COLLECTIONS_FE_H

@@ -33,8 +33,6 @@ PHP_METHOD(Collection, filter);
 PHP_METHOD(Collection, filterNot);
 PHP_METHOD(Collection, filterNotTo);
 PHP_METHOD(Collection, filterTo);
-PHP_METHOD(Collection, find);
-PHP_METHOD(Collection, findLast);
 PHP_METHOD(Collection, first);
 PHP_METHOD(Collection, flatMap);
 PHP_METHOD(Collection, flatMapTo);

@@ -227,23 +227,6 @@ class Collection implements ArrayAccess, Countable
      * Returns the first element matching the given predicate, or null if no such
      * element was found.
      *
-     * @param callable $predicate ($value, $key) -> bool
-     * @return mixed
-     */
-    function find($predicate) {}
-
-    /**
-     * Returns the last element matching the given predicate, or null if no such
-     * element was found.
-     *
-     * @param callable $predicate ($value, $key) -> bool
-     * @return mixed
-     */
-    function findLast($predicate) {}
-
-    /**
-     * Returns the first element matching the given predicate.
-     *
      * @param callable $predicate[optional] ($value, $key) -> bool
      * @return mixed
      */
@@ -398,7 +381,8 @@ class Collection implements ArrayAccess, Countable
     function keys() {}
 
     /**
-     * Returns the last element matching the given predicate.
+     * Returns the last element matching the given predicate, or null if no such
+     * element was found.
      *
      * @param callable $predicate[optional] ($value, $key) -> bool
      * @return mixed

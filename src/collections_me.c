@@ -147,8 +147,6 @@ const zend_function_entry collection_methods[] = {
     PHP_ME(Collection, filterNot, predicate_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, filterNotTo, destination_predicate_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, filterTo, destination_predicate_arginfo, ZEND_ACC_PUBLIC)
-    PHP_ME(Collection, find, predicate_arginfo, ZEND_ACC_PUBLIC)
-    PHP_ME(Collection, findLast, predicate_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, first, predicate_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, flatMap, transform_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, flatMapTo, destination_transform_arginfo, ZEND_ACC_PUBLIC)
