@@ -31,7 +31,6 @@ PHP_MINIT_FUNCTION(collections)
         2, zend_ce_countable,
 #endif
         zend_ce_arrayaccess);
-    zend_declare_property_null(collections_collection_ce, "_", sizeof "_" - 1, ZEND_ACC_PRIVATE);
     collection_handlers = (zend_object_handlers*)emalloc(sizeof(zend_object_handlers));
     memcpy(collection_handlers, &std_object_handlers, sizeof(zend_object_handlers));
     collection_handlers->count_elements = count_collection;
