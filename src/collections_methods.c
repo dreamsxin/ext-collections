@@ -87,19 +87,12 @@
     ARRAY_NEW_EX(dest, src); \
     zend_hash_copy(dest, src, NULL)
 
-// Compatible with PHP 7.2
-#if PHP_VERSION_ID >= 70200
-#define ALLOW_COW_VIOLATION(ht) HT_ALLOW_COW_VIOLATION(ht)
-#else
-#define ALLOW_COW_VIOLATION(ht)
-#endif
-
 #define RETVAL_NEW_COLLECTION(collection) \
     do { \
         NEW_COLLECTION_OBJ(obj); \
         zend_array* new_arr = collection; \
         if (GC_REFCOUNT(new_arr) > 1) \
-            new_arr = zend_array_dup(new_arr) \
+            new_arr = zend_array_dup(new_arr); \
         object_properties_init_ex(obj, new_arr); \
         RETVAL_OBJ(obj); \
     } while (0)
