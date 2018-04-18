@@ -33,8 +33,15 @@
 #define PAIR_FETCH_FIRST(obj) OBJ_PROPERTY_FETCH(collections_pair_ce, obj, first)
 #define PAIR_FETCH_SECOND(obj)  OBJ_PROPERTY_FETCH(collections_pair_ce, obj, second)
 
-#define COLLECTION_FETCH(obj) Z_OBJPROP_P(obj)
+#define COLLECTION_FETCH(obj) Z_OBJ_P(obj)->properties
 #define COLLECTION_FETCH_EX() COLLECTION_FETCH(getThis())
+
+#define SEPARATE_COLLECTION(ht, obj) \
+    if (GC_REFCOUNT(ht) > 1) { \
+        GC_DELREF(ht); \
+        ht = Z_OBJ_P(obj)->properties = zend_array_dup(ht); \
+    }
+#define SEPARATE_COLLECTION_EX(ht) SEPARATE_COLLECTION(ht, getThis())
 
 #define INIT_FCI() \
     zval params[2], retval; \
@@ -90,10 +97,9 @@
 #define RETVAL_NEW_COLLECTION(collection) \
     do { \
         NEW_COLLECTION_OBJ(obj); \
-        zend_array* new_arr = collection; \
-        if (GC_REFCOUNT(new_arr) > 1) \
-            new_arr = zend_array_dup(new_arr); \
-        object_properties_init_ex(obj, new_arr); \
+        if (GC_REFCOUNT(collection) > 1) \
+            GC_ADDREF(collection); \
+        obj->properties = collection; \
         RETVAL_OBJ(obj); \
     } while (0)
 
@@ -127,6 +133,7 @@ int collection_offset_exists(zval* object, zval* offset, int check_empty)
 void collection_offset_set(zval* object, zval* offset, zval* value)
 {
     zend_array* current = COLLECTION_FETCH(object);
+    SEPARATE_COLLECTION(current, object);
     if (Z_TYPE_P(offset) == IS_LONG)
         zend_hash_index_update(current, Z_LVAL_P(offset), value);
     else if (Z_TYPE_P(offset) == IS_STRING)
@@ -150,6 +157,7 @@ zval* collection_offset_get(zval* object, zval* offset, int type, zval* retval)
 void collection_offset_unset(zval* object, zval* offset)
 {
     zend_array* current = COLLECTION_FETCH(object);
+    SEPARATE_COLLECTION(current, object);
     if (Z_TYPE_P(offset) == IS_LONG)
         zend_hash_index_del(current, Z_LVAL_P(offset));
     else if (Z_TYPE_P(offset) == IS_STRING)
@@ -166,6 +174,7 @@ PHP_METHOD(Collection, addAll)
     ZEND_PARSE_PARAMETERS_END();
     ELEMENTS_VALIDATE(elements);
     zend_array* current = COLLECTION_FETCH_EX();
+    SEPARATE_COLLECTION_EX(current);
     ZEND_HASH_FILL_PACKED(current)
         ZEND_HASH_FOREACH_VAL(elements_arr, zval* val)
             ZEND_HASH_FILL_ADD(val);
@@ -249,6 +258,7 @@ PHP_METHOD(Collection, associateTo)
     INIT_FCI();
     zend_array* current = COLLECTION_FETCH_EX();
     zend_array* dest_arr = COLLECTION_FETCH(dest);
+    SEPARATE_COLLECTION(dest_arr, dest);
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (IS_PAIR(retval)) {
@@ -303,6 +313,7 @@ PHP_METHOD(Collection, associateByTo)
     INIT_FCI();
     zend_array* current = COLLECTION_FETCH_EX();
     zend_array* dest_arr = COLLECTION_FETCH(dest);
+    SEPARATE_COLLECTION(dest_arr, dest);
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (Z_TYPE(retval) == IS_LONG)
@@ -326,7 +337,7 @@ PHP_METHOD(Collection, average)
             sum += Z_DVAL_P(val);
         else {
             ERR_NOT_ARITHMETIC();
-            RETURN_NULL();
+            return;
         }
     ZEND_HASH_FOREACH_END();
     RETVAL_DOUBLE(sum / zend_hash_num_elements(current));
@@ -339,7 +350,6 @@ PHP_METHOD(Collection, containsAll)
         Z_PARAM_ZVAL(elements)
     ZEND_PARSE_PARAMETERS_END();
     ELEMENTS_VALIDATE(elements);
-    zval rv;
     zend_array* current = COLLECTION_FETCH_EX();
     ZEND_HASH_FOREACH_VAL(elements_arr, zval* element)
         INIT_EQUAL_CHECK_FUNC(element);
@@ -375,7 +385,6 @@ PHP_METHOD(Collection, containsValue)
     ZEND_PARSE_PARAMETERS_START(1, 1)
         Z_PARAM_ZVAL(element)
     ZEND_PARSE_PARAMETERS_END();
-    zval rv;
     zend_array* current = COLLECTION_FETCH_EX();
     INIT_EQUAL_CHECK_FUNC(element);
     ZEND_HASH_FOREACH_VAL(current, zval* val)
@@ -436,11 +445,15 @@ PHP_METHOD(Collection, copyOfRange)
     ARRAY_NEW(new_collection, num_elements);
     Bucket* bucket = current->arData;
     Bucket* end = bucket + current->nNumUsed;
-    for (bucket += from_idx; num_elements > 0 && bucket < end; ++bucket, --num_elements)
+    for (bucket += from_idx; num_elements > 0 && bucket < end; ++bucket) {
+        if (Z_ISUNDEF(bucket->val))
+            continue;
+        --num_elements;
         if (bucket->key)
             zend_hash_add(new_collection, bucket->key, &bucket->val);
         else
             zend_hash_next_index_insert(new_collection, &bucket->val);
+    }
     RETVAL_NEW_COLLECTION(new_collection);
 }
 
@@ -475,7 +488,10 @@ PHP_METHOD(Collection, drop)
     ARRAY_CLONE(new_collection, current);
     Bucket* bucket = new_collection->arData;
     Bucket* end = bucket + new_collection->nNumUsed;
-    for (; n > 0 && bucket < end; ++bucket, --n) {
+    for (; n > 0 && bucket < end; ++bucket) {
+        if (Z_ISUNDEF(bucket->val))
+            continue;
+        --n;
         if (Z_REFCOUNTED(bucket->val))
             GC_ADDREF(Z_COUNTED(bucket->val));
         zend_hash_del_bucket(new_collection, bucket);
@@ -496,8 +512,11 @@ PHP_METHOD(Collection, dropLast)
     zend_array* current = COLLECTION_FETCH_EX();
     ARRAY_CLONE(new_collection, current);
     unsigned idx = new_collection->nNumUsed;
-    for (; n > 0 && idx > 0; --idx, --n) {
+    for (; n > 0 && idx > 0; --idx) {
         Bucket* bucket = new_collection->arData + idx - 1;
+        if (Z_ISUNDEF(bucket->val))
+            continue;
+        --n;
         if (Z_REFCOUNTED(bucket->val))
             GC_ADDREF(Z_COUNTED(bucket->val));
         zend_hash_del_bucket(new_collection, bucket);
@@ -549,8 +568,8 @@ PHP_METHOD(Collection, fill)
 {
     zval* element;
     zend_long from_idx = 0;
-    zval rv;
     zend_array* current = COLLECTION_FETCH_EX();
+    SEPARATE_COLLECTION_EX(current);
     zend_long num_elements = zend_hash_num_elements(current - from_idx);
     ZEND_PARSE_PARAMETERS_START(1, 3)
         Z_PARAM_ZVAL(element)
@@ -561,6 +580,8 @@ PHP_METHOD(Collection, fill)
     Bucket* bucket = current->arData;
     Bucket* end = bucket + current->nNumUsed;
     for (bucket += from_idx; num_elements > 0 && bucket < end; ++bucket, --num_elements) {
+        if (Z_ISUNDEF(bucket->val))
+            continue;
         if (bucket->key)
             zend_hash_update(current, bucket->key, element);
         else
@@ -622,6 +643,7 @@ PHP_METHOD(Collection, filterNotTo)
     INIT_FCI();
     zend_array* current = COLLECTION_FETCH_EX();
     zend_array* dest_arr = COLLECTION_FETCH(dest);
+    SEPARATE_COLLECTION(dest_arr, dest);
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (!zend_is_true(&retval))
@@ -645,6 +667,7 @@ PHP_METHOD(Collection, filterTo)
     INIT_FCI();
     zend_array* current = COLLECTION_FETCH_EX();
     zend_array* dest_arr = COLLECTION_FETCH(dest);
+    SEPARATE_COLLECTION(dest_arr, dest);
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (zend_is_true(&retval))
@@ -668,8 +691,10 @@ PHP_METHOD(Collection, first)
     if (zend_hash_num_elements(current) == 0)
         RETURN_NULL();
     if (EX_NUM_ARGS() == 0) {
-        zend_hash_internal_pointer_reset(current);
-        RETURN_ZVAL(zend_hash_get_current_data(current), 1, 0);
+        HashPosition pos = 0;
+        while (pos < current->nNumUsed && Z_ISUNDEF(current->arData[pos].val))
+            ++pos;
+        RETURN_ZVAL(&current->arData[pos].val, 1, 0);
     }
     INIT_FCI();
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
@@ -719,6 +744,7 @@ PHP_METHOD(Collection, flatMapTo)
     INIT_FCI();
     zend_array* current = COLLECTION_FETCH_EX();
     zend_array* dest_arr = COLLECTION_FETCH(dest);
+    SEPARATE_COLLECTION(dest_arr, dest);
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
         zval* retval_p = &retval;
@@ -833,10 +859,10 @@ PHP_METHOD(Collection, last)
     if (zend_hash_num_elements(current) == 0)
         RETURN_NULL();
     if (EX_NUM_ARGS() == 0) {
-        zend_hash_internal_pointer_end(current);
-        RETVAL_ZVAL(zend_hash_get_current_data(current), 1, 0);
-        zend_hash_internal_pointer_reset(current);
-        return;
+        HashPosition pos = current->nNumUsed;
+        while (pos >= 0 && Z_ISUNDEF(current->arData[pos].val))
+            --pos;
+        RETURN_ZVAL(&current->arData[pos].val, 1, 0);
     }
     INIT_FCI();
     ZEND_HASH_REVERSE_FOREACH_BUCKET(current, Bucket* bucket)

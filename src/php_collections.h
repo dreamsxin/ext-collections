@@ -33,7 +33,7 @@ extern zend_object_handlers* collection_handlers;
 int count_collection(zval* obj, zend_long* count);
 int collection_offset_exists(zval* object, zval* offset, int check_empty);
 void collection_offset_set(zval* object, zval* offset, zval* value);
-zval* collection_offset_get(zval* object, zval* offset, int type, zval* rv);
+zval* collection_offset_get(zval* object, zval* offset, int type, zval* retval);
 void collection_offset_unset(zval* object, zval* offset);
 
 extern const zend_function_entry collection_methods[];
