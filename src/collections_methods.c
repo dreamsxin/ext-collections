@@ -17,7 +17,8 @@
 #define NEW_COLLECTION_OBJ(name) \
     NEW_OBJ(name, collections_collection_ce, collection_handlers)
 #define NEW_PAIR_OBJ(name) \
-    NEW_OBJ(name, collections_pair_ce, &std_object_handlers)
+    NEW_OBJ(name, collections_pair_ce, &std_object_handlers); \
+    object_properties_init(name, collections_pair_ce)
 
 #define IS_COLLECTION_P(zval) \
     Z_TYPE_P(zval) == IS_OBJECT && Z_OBJCE_P(zval) == collections_collection_ce
@@ -1142,12 +1143,39 @@ PHP_METHOD(Collection, toArray)
 
 PHP_METHOD(Collection, toCollection)
 {
-    
+    zval* dest;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_OBJECT_OF_CLASS(dest, collections_collection_ce)
+    ZEND_PARSE_PARAMETERS_END();
+    zend_array* current = COLLECTION_FETCH_EX();
+    zend_array* dest_arr = COLLECTION_FETCH(dest);
+    SEPARATE_COLLECTION(dest_arr, dest);
+    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
+        if (bucket->key)
+            zend_hash_add(dest_arr, bucket->key, &bucket->val);
+        else
+            zend_hash_next_index_insert(dest_arr, &bucket->val);
+    ZEND_HASH_FOREACH_END();
+    RETVAL_ZVAL(dest, 1, 0);
 }
 
 PHP_METHOD(Collection, toPairs)
 {
-    
+    zend_array* current = COLLECTION_FETCH_EX();
+    ARRAY_NEW_EX(new_collection, current);
+    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
+        NEW_PAIR_OBJ(obj);
+        zval pair, key;
+        ZVAL_OBJ(&pair, obj);
+        if (bucket->key)
+            ZVAL_STR(&key, bucket->key);
+        else
+            ZVAL_LONG(&key, bucket->h);
+        PAIR_UPDATE_FIRST(&pair, &key);
+        PAIR_UPDATE_SECOND(&pair, &bucket->val);
+        zend_hash_next_index_insert(new_collection, &pair);
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NEW_COLLECTION(new_collection);
 }
 
 PHP_METHOD(Collection, union)
