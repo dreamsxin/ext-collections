@@ -11,7 +11,18 @@ Method names and functionalities are inspired by [Kotlin.Collections](https://ko
 
 ## 2. Documentation
 
+### 2.1 Functionalities
+
 See [stubs](stubs/) directory for signature of all classes and methods of this extension, with PHPDoc.
+
+### 2.2 PHP-style access
+
+The `Collection` class implements `ArrayAccess` and `Countable` interface internally, you can treat an instance of `Collection` as an `ArrayObject`.
+
+* The `isset()`, `unset()` keywords can be used on elements of `Collection`.
+* Elements can be accessed via property (string keys only) and bracket expression.
+* `empty()`, `count()` can be used on instance of `Collection`.
+* Elements can be traversed via `foreach()` keyword.
 
 ## 3. Example
 
@@ -27,16 +38,15 @@ $employees = [
 // Trying to get an array of names of male employees,
 // sorted by the descending order of their age.
 $names = Collection::init($employees)
-    ->filter(function ($it) {
-        return $it['sex'] == 'male';
+    ->filter(function ($value) {
+        return $value['sex'] == 'male';
     })
-    ->sortedByDescending(function ($it) {
-        return $it['age'];
+    ->sortedByDescending(function ($value) {
+        return $value['age'];
     })
-    ->map(function ($it) {
-        return $it['name'];
+    ->map(function ($value) {
+        return $value['name'];
     })
     ->toArray();
 // You got $names == ['David', 'Benjamin', 'Bob'].
 ```
-
