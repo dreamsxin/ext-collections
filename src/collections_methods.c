@@ -74,16 +74,17 @@
 #define ERR_BAD_SIZE() PHP_COLLECTIONS_ERROR(E_WARNING, "Size must be non-negative")
 #define ERR_BAD_INDEX() PHP_COLLECTIONS_ERROR(E_WARNING, "Index must be non-negative")
 #define ERR_NOT_ARITHMETIC() PHP_COLLECTIONS_ERROR(E_WARNING, "Elements should be int or double")
+#define ERR_SILENCED()
 
-#define ELEMENTS_VALIDATE(elements) \
+#define ELEMENTS_VALIDATE(elements, err, err_then) \
     zend_array* elements##_arr; \
     if (IS_COLLECTION_P(elements)) \
         (elements##_arr) = COLLECTION_FETCH(elements); \
     else if (UNEXPECTED(Z_TYPE_P(elements) == IS_ARRAY))\
         (elements##_arr) = Z_ARRVAL_P(elements); \
     else { \
-        ERR_BAD_ARGUMENT_TYPE(); \
-        return; \
+        err(); \
+        err_then; \
     }
 
 #define ARRAY_NEW(name, size) \
@@ -173,7 +174,7 @@ PHP_METHOD(Collection, addAll)
     ZEND_PARSE_PARAMETERS_START(1, 1)
         Z_PARAM_ZVAL(elements)
     ZEND_PARSE_PARAMETERS_END();
-    ELEMENTS_VALIDATE(elements);
+    ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
     zend_array* current = COLLECTION_FETCH_EX();
     SEPARATE_COLLECTION_EX(current);
     ZEND_HASH_FILL_PACKED(current)
@@ -350,7 +351,7 @@ PHP_METHOD(Collection, containsAll)
     ZEND_PARSE_PARAMETERS_START(1, 1)
         Z_PARAM_ZVAL(elements)
     ZEND_PARSE_PARAMETERS_END();
-    ELEMENTS_VALIDATE(elements);
+    ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
     zend_array* current = COLLECTION_FETCH_EX();
     ZEND_HASH_FOREACH_VAL(elements_arr, zval* element)
         INIT_EQUAL_CHECK_FUNC(element);
@@ -719,7 +720,7 @@ PHP_METHOD(Collection, flatMap)
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
         zval* retval_p = &retval;
-        ELEMENTS_VALIDATE(retval_p);
+        ELEMENTS_VALIDATE(retval_p, ERR_BAD_CALLBACK_RETVAL, continue);
         ZEND_HASH_FOREACH_BUCKET(retval_p_arr, Bucket* bucket)
             if (Z_REFCOUNTED(bucket->val))
                 GC_ADDREF(Z_COUNTED(bucket->val));
@@ -749,7 +750,7 @@ PHP_METHOD(Collection, flatMapTo)
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
         zval* retval_p = &retval;
-        ELEMENTS_VALIDATE(retval_p);
+        ELEMENTS_VALIDATE(retval_p, ERR_BAD_CALLBACK_RETVAL, continue);
         ZEND_HASH_FOREACH_BUCKET(retval_p_arr, Bucket* bucket)
             if (Z_REFCOUNTED(bucket->val))
                 GC_ADDREF(Z_COUNTED(bucket->val));
@@ -765,7 +766,25 @@ PHP_METHOD(Collection, flatMapTo)
 
 PHP_METHOD(Collection, flatten)
 {
-    
+    zend_array* current = COLLECTION_FETCH_EX();
+    ARRAY_NEW_EX(new_collection, current);
+    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
+        zval* val = &bucket->val;
+        ELEMENTS_VALIDATE(val, ERR_SILENCED, {
+            if (bucket->key)
+                zend_hash_add(new_collection, bucket->key, &bucket->val);
+            else
+                zend_hash_next_index_insert(new_collection, &bucket->val);
+            continue;
+        });
+        ZEND_HASH_FOREACH_BUCKET(val_arr, Bucket* bucket)
+            if (bucket->key)
+                zend_hash_add(new_collection, bucket->key, &bucket->val);
+            else
+                zend_hash_next_index_insert(new_collection, &bucket->val);
+        ZEND_HASH_FOREACH_END();
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NEW_COLLECTION(new_collection);
 }
 
 PHP_METHOD(Collection, fold)
@@ -821,7 +840,7 @@ PHP_METHOD(Collection, init)
         Z_PARAM_ZVAL(elements)
     ZEND_PARSE_PARAMETERS_END();
     if (elements) {
-        ELEMENTS_VALIDATE(elements);
+        ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
         RETURN_NEW_COLLECTION(elements_arr);
     }
     ARRAY_NEW(collection, 0);
@@ -872,11 +891,6 @@ PHP_METHOD(Collection, last)
             RETURN_ZVAL(&bucket->val, 1, 0);
     ZEND_HASH_FOREACH_END();
     RETVAL_NULL();
-}
-
-PHP_METHOD(Collection, lastIndexOf)
-{
-    
 }
 
 PHP_METHOD(Collection, map)

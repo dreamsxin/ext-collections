@@ -331,7 +331,7 @@ class Collection implements ArrayAccess, Countable
      * Returns key of the first element matching the given predicate, or null if the collection
      * does not contain such element.
      *
-     * @param callable $predicate ($value) -> bool
+     * @param callable $predicate[optional] ($value) -> bool
      * @return int|string|null
      */
     function indexOfFirst($predicate) {}
@@ -340,7 +340,7 @@ class Collection implements ArrayAccess, Countable
      * Returns key of the last element matching the given predicate, or null if the collection
      * does not contain such element.
      *
-     * @param callable $predicate ($value) -> bool
+     * @param callable $predicate[optional] ($value) -> bool
      * @return int|string|null
      */
     function indexOfLast($predicate) {}
@@ -388,14 +388,6 @@ class Collection implements ArrayAccess, Countable
      * @return mixed
      */
     function last($predicate) {}
-
-    /**
-     * Returns last key of element, or null if the collection does not contain element.
-     *
-     * @param mixed $element
-     * @return int|string|null
-     */
-    function lastIndexOf($element) {}
 
     /**
      * Returns a collection containing the results of applying the given transform function
