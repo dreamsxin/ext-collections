@@ -447,7 +447,8 @@ class Collection implements ArrayAccess, Countable
     function mapValuesTo($destination, $transform) {}
 
     /**
-     * Returns the largest element or null if there are no elements.
+     * Returns the largest element or null if there are no elements. The collection should contain
+     * only one type of numeric elements(int/double).
      *
      * @return mixed
      */
@@ -472,7 +473,8 @@ class Collection implements ArrayAccess, Countable
     function maxWith($comparator) {}
 
     /**
-     * Returns the largest element or null if there are no elements.
+     * Returns the largest element or null if there are no elements. The collection should contain
+     * only one type of numeric elements(int/double).
      *
      * @return mixed
      */

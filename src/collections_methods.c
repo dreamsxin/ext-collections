@@ -864,7 +864,17 @@ PHP_METHOD(Collection, isNotEmpty)
 
 PHP_METHOD(Collection, keys)
 {
-    
+    zend_array* current = COLLECTION_FETCH_EX();
+    ARRAY_NEW_EX(new_collection, current);
+    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
+        zval val;
+        if (bucket->key)
+            ZVAL_STR(&val, bucket->key);
+        else
+            ZVAL_LONG(&val, bucket->h);
+        zend_hash_next_index_insert(new_collection, &val);
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NEW_COLLECTION(new_collection);
 }
 
 PHP_METHOD(Collection, last)
@@ -925,7 +935,11 @@ PHP_METHOD(Collection, mapValuesTo)
 
 PHP_METHOD(Collection, max)
 {
-    
+    zend_array* current = COLLECTION_FETCH_EX();
+    zval* retval = zend_hash_minmax(current, numeric_compare_function, 1);
+    if (retval)
+        RETURN_ZVAL(retval, 0, 0);
+    RETVAL_NULL();
 }
 
 PHP_METHOD(Collection, maxBy)
@@ -940,7 +954,11 @@ PHP_METHOD(Collection, maxWith)
 
 PHP_METHOD(Collection, min)
 {
-    
+    zend_array* current = COLLECTION_FETCH_EX();
+    zval* retval = zend_hash_minmax(current, numeric_compare_function, 0);
+    if (retval)
+        RETURN_ZVAL(retval, 0, 0);
+    RETVAL_NULL();
 }
 
 PHP_METHOD(Collection, minBy)
@@ -985,7 +1003,19 @@ PHP_METHOD(Collection, minusValuesAssign)
 
 PHP_METHOD(Collection, none)
 {
-    
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    INIT_FCI();
+    zend_array* current = COLLECTION_FETCH_EX();
+    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
+        if (zend_is_true(&retval))
+            RETURN_FALSE;
+    ZEND_HASH_FOREACH_END();
+    RETURN_TRUE;
 }
 
 PHP_METHOD(Collection, onEach)
@@ -1199,7 +1229,12 @@ PHP_METHOD(Collection, union)
 
 PHP_METHOD(Collection, values)
 {
-    
+    zend_array* current = COLLECTION_FETCH_EX();
+    ARRAY_NEW_EX(new_collection, current);
+    ZEND_HASH_FOREACH_VAL(current, zval* val)
+        zend_hash_next_index_insert(new_collection, val);
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NEW_COLLECTION(new_collection);
 }
 
 PHP_METHOD(Pair, __construct)
