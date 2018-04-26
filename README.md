@@ -24,6 +24,10 @@ The `Collection` class implements `ArrayAccess` and `Countable` interface intern
 * `empty()`, `count()` can be used on instance of `Collection`.
 * Elements can be traversed via `foreach()` keyword.
 
+### 2.3 Notes
+
+* The `Collection::xxxTo()` methods will preserve the original key-value pairs of destination `Collection` when keys collide.
+
 ## 3. Example
 
 Here is a simple example for how to work with arrays gracefully using this extension.

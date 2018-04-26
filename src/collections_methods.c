@@ -820,7 +820,7 @@ PHP_METHOD(Collection, get)
         found = zend_hash_index_find(current, Z_LVAL_P(key));
     else {
         ERR_BAD_KEY_TYPE();
-        RETVAL_NULL();
+        RETURN_NULL();
     }
     if (found)
         RETURN_ZVAL(found, 1, 0);
