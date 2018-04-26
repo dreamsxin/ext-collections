@@ -1,5 +1,5 @@
 --TEST--
-Test Collection::none().
+Test Collection::keys() and Collection::values().
 --FILE--
 <?php
 $array = ['a' => 'b', 'c' => ['d'], 10 => 'f'];

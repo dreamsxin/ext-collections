@@ -714,6 +714,15 @@ class Collection implements ArrayAccess, Countable
     function reversed() {}
 
     /**
+     * Add a key-value pair to the array. If the key exists, update it.
+     *
+     * @param int|string $key
+     * @param mixed $value
+     * @return void
+     */
+    function set($key, $value) {}
+
+    /**
      * Randomly shuffles elements in this collection.
      *
      * @return Collection
