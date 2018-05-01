@@ -1028,7 +1028,7 @@ PHP_METHOD(Collection, minBy)
         zend_hash_index_add(min_by, bucket - current->arData, &retval);
     ZEND_HASH_FOREACH_END();
     zval* min = zend_hash_minmax(min_by, bucket_compare_numeric, 0);
-    if (max) {
+    if (min) {
         zend_ulong offset = *(zend_ulong*)(min + 1);
         zval* ret = &(current->arData + offset)->val;
         RETVAL_ZVAL(ret, 1, 0);
