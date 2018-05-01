@@ -39,12 +39,4 @@ void collection_offset_unset(zval* object, zval* offset);
 extern const zend_function_entry collection_methods[];
 extern const zend_function_entry pair_methods[];
 
-#ifdef ZTS
-#include "TSRM.h"
-#endif
-
-#if defined(ZTS) && defined(COMPILE_DL_COLLECTIONS)
-ZEND_TSRMLS_CACHE_EXTERN()
-#endif
-
 #endif // !PHP_COLLECTIONS_FE_H

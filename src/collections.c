@@ -46,14 +46,6 @@ PHP_MINIT_FUNCTION(collections)
     return SUCCESS;
 }
 
-PHP_RINIT_FUNCTION(collections)
-{
-#if defined(COMPILE_DL_COLLECTIONS) && defined(ZTS)
-    ZEND_TSRMLS_CACHE_UPDATE();
-#endif
-    return SUCCESS;
-}
-
 PHP_MINFO_FUNCTION(collections)
 {
     php_info_print_table_start();
@@ -67,7 +59,7 @@ zend_module_entry collections_module_entry = {
     NULL,
     PHP_MINIT(collections),
     NULL,
-    PHP_RINIT(collections),
+    NULL,
     NULL,
     PHP_MINFO(collections),
     PHP_COLLECTIONS_VERSION,
@@ -75,8 +67,5 @@ zend_module_entry collections_module_entry = {
 };
 
 #ifdef COMPILE_DL_COLLECTIONS
-#ifdef ZTS
-ZEND_TSRMLS_CACHE_DEFINE()
-#endif
 ZEND_GET_MODULE(collections)
 #endif
