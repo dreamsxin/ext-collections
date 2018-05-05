@@ -5,7 +5,6 @@
 //
 
 #include <php.h>
-#include <stdint.h>
 
 #include "php_collections.h"
 #include "php_collections_me.h"
@@ -67,6 +66,10 @@
         equal_check_func = fast_equal_check_string; \
     else \
         equal_check_func = fast_equal_check_function;
+
+#define ADDREF_IF_REFCOUNTED(val) \
+    if (Z_REFCOUNTED(val)) \
+        GC_ADDREF(Z_COUNTED(val))
 
 #define PHP_COLLECTIONS_ERROR(type, msg) php_error_docref(NULL, type, msg)
 #define ERR_BAD_ARGUMENT_TYPE() PHP_COLLECTIONS_ERROR(E_WARNING, "Bad argument type")
@@ -500,8 +503,7 @@ PHP_METHOD(Collection, drop)
         if (Z_ISUNDEF(bucket->val))
             continue;
         --n;
-        if (Z_REFCOUNTED(bucket->val))
-            GC_ADDREF(Z_COUNTED(bucket->val));
+        ADDREF_IF_REFCOUNTED(bucket->val);
         zend_hash_del_bucket(new_collection, bucket);
     }
     RETVAL_NEW_COLLECTION(new_collection);
@@ -525,8 +527,7 @@ PHP_METHOD(Collection, dropLast)
         if (Z_ISUNDEF(bucket->val))
             continue;
         --n;
-        if (Z_REFCOUNTED(bucket->val))
-            GC_ADDREF(Z_COUNTED(bucket->val));
+        ADDREF_IF_REFCOUNTED(bucket->val);
         zend_hash_del_bucket(new_collection, bucket);
     }
     RETVAL_NEW_COLLECTION(new_collection);
@@ -728,8 +729,7 @@ PHP_METHOD(Collection, flatMap)
         zval* retval_p = &retval;
         ELEMENTS_VALIDATE(retval_p, ERR_BAD_CALLBACK_RETVAL, continue);
         ZEND_HASH_FOREACH_BUCKET(retval_p_arr, Bucket* bucket)
-            if (Z_REFCOUNTED(bucket->val))
-                GC_ADDREF(Z_COUNTED(bucket->val));
+            ADDREF_IF_REFCOUNTED(bucket->val);
             if (bucket->key)
                 zend_hash_add(new_collection, bucket->key, &bucket->val);
             else
@@ -758,8 +758,7 @@ PHP_METHOD(Collection, flatMapTo)
         zval* retval_p = &retval;
         ELEMENTS_VALIDATE(retval_p, ERR_BAD_CALLBACK_RETVAL, continue);
         ZEND_HASH_FOREACH_BUCKET(retval_p_arr, Bucket* bucket)
-            if (Z_REFCOUNTED(bucket->val))
-                GC_ADDREF(Z_COUNTED(bucket->val));
+            ADDREF_IF_REFCOUNTED(bucket->val);
             if (bucket->key)
                 zend_hash_add(dest_arr, bucket->key, &bucket->val);
             else
