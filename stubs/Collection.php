@@ -680,14 +680,16 @@ class Collection implements ArrayAccess, Countable
      *
      * @param int|string $key
      * @param mixed $value[optional]
+     * @return bool
      */
     function remove($key, $value) {}
 
     /**
-     * Removes all elements from this collection that match the given predicate.
+     * Removes all elements from this collection that match the given predicate. If predicate is not
+     * provided, all elements will be removed.
      *
-     * @param callable $predicate ($value, $key) -> bool
-     * @return bool
+     * @param callable $predicate[optional] ($value, $key) -> bool
+     * @return void
      */
     function removeAll($predicate) {}
 
@@ -695,7 +697,7 @@ class Collection implements ArrayAccess, Countable
      * Retains only elements of this collection that match the given predicate.
      *
      * @param callable $predicate ($value, $key) -> bool
-     * @return bool
+     * @return void
      */
     function retainAll($predicate) {}
 

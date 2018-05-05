@@ -5,6 +5,7 @@
 //
 
 #include <php.h>
+#include <stdint.h>
 
 #include "php_collections.h"
 #include "php_collections_me.h"
@@ -1142,17 +1143,77 @@ PHP_METHOD(Collection, reduceRight)
 
 PHP_METHOD(Collection, remove)
 {
-    
+    zval* key;
+    zval* value = NULL;
+    ZEND_PARSE_PARAMETERS_START(1, 2)
+        Z_PARAM_ZVAL(key)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_ZVAL(value)
+    ZEND_PARSE_PARAMETERS_END();
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    zval* found;
+    if (Z_TYPE_P(key) == IS_LONG) {
+        if (value == NULL)
+            RETURN_BOOL(zend_hash_index_del(current, Z_LVAL_P(key)) == SUCCESS);
+        found = zend_hash_index_find(current, Z_LVAL_P(key));
+        if (found == NULL || fast_equal_check_function(found, value) == 0)
+            RETURN_FALSE;
+        RETURN_BOOL(zend_hash_index_del(current, Z_LVAL_P(key)) == SUCCESS);
+    }
+    if (Z_TYPE_P(key) == IS_STRING) {
+        if (value == NULL)
+            RETURN_BOOL(zend_hash_del(current, Z_STR_P(key)) == SUCCESS);
+        found = zend_hash_find(current, Z_STR_P(key));
+        if (found == NULL || fast_equal_check_function(found, value) == 0)
+            RETURN_FALSE;
+        RETURN_BOOL(zend_hash_del(current, Z_STR_P(key)) == SUCCESS);
+    }
+    ERR_BAD_KEY_TYPE();
+    RETVAL_FALSE;
 }
 
 PHP_METHOD(Collection, removeAll)
 {
-    
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    SEPARATE_CURRENT_COLLECTION(current);
+    if (EX_NUM_ARGS() == 0) {
+        zend_hash_clean(current);
+        return;
+    }
+    INIT_FCI(2);
+    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
+        if (zend_is_true(&retval))
+            zend_hash_del_bucket(current, bucket);
+    ZEND_HASH_FOREACH_END();
 }
 
 PHP_METHOD(Collection, retainAll)
 {
-    
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    SEPARATE_CURRENT_COLLECTION(current);
+    if (EX_NUM_ARGS() == 0) {
+        zend_hash_clean(current);
+        return;
+    }
+    INIT_FCI(2);
+    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
+        if (!zend_is_true(&retval))
+            zend_hash_del_bucket(current, bucket);
+    ZEND_HASH_FOREACH_END();
 }
 
 PHP_METHOD(Collection, reverse)
@@ -1179,12 +1240,13 @@ PHP_METHOD(Collection, set)
         Z_PARAM_ZVAL(value)
     ZEND_PARSE_PARAMETERS_END();
     zend_array* current = COLLECTION_FETCH_CURRENT();
-    SEPARATE_CURRENT_COLLECTION(current);
-    if (Z_TYPE_P(key) == IS_STRING)
+    if (Z_TYPE_P(key) == IS_STRING) {
+        SEPARATE_CURRENT_COLLECTION(current);
         zend_hash_update(current, Z_STR_P(key), value);
-    else if (Z_TYPE_P(key) == IS_LONG)
+    } else if (Z_TYPE_P(key) == IS_LONG) {
+        SEPARATE_CURRENT_COLLECTION(current);
         zend_hash_index_update(current, Z_LVAL_P(key), value);
-    else
+    } else
         ERR_BAD_KEY_TYPE();
 }
 

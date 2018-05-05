@@ -20,7 +20,7 @@ See [stubs](stubs/) directory for signature of all classes and methods of this e
 The `Collection` class implements `ArrayAccess` and `Countable` interface internally, you can treat an instance of `Collection` as an `ArrayObject`.
 
 * The `isset()`, `unset()` keywords can be used on elements of `Collection`.
-* Elements can be accessed via property (string keys only) and bracket expression.
+* Elements can be accessed via property and bracket expression.
 * `empty()`, `count()` can be used on instance of `Collection`.
 * Elements can be traversed via `foreach()` keyword.
 
@@ -48,7 +48,7 @@ $names = Collection::init($employees)
     ->sortedByDescending(function ($value) {
         return $value['age'];
     })
-    ->map(function ($value) {
+    ->mapValues(function ($value) {
         return $value['name'];
     })
     ->toArray();
