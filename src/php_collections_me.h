@@ -72,7 +72,6 @@ PHP_METHOD(Collection, minusValues);
 PHP_METHOD(Collection, minusValuesAssign);
 PHP_METHOD(Collection, none);
 PHP_METHOD(Collection, onEach);
-PHP_METHOD(Collection, orEmpty);
 PHP_METHOD(Collection, partition);
 PHP_METHOD(Collection, plus);
 PHP_METHOD(Collection, plusAssign);

@@ -804,7 +804,16 @@ PHP_METHOD(Collection, foldRight)
 
 PHP_METHOD(Collection, forEach)
 {
-    
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    INIT_FCI(2);
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
+    ZEND_HASH_FOREACH_END();
 }
 
 PHP_METHOD(Collection, get)
@@ -1092,12 +1101,17 @@ PHP_METHOD(Collection, none)
 
 PHP_METHOD(Collection, onEach)
 {
-    
-}
-
-PHP_METHOD(Collection, orEmpty)
-{
-    
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    INIT_FCI(2);
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
+    ZEND_HASH_FOREACH_END();
+    RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 PHP_METHOD(Collection, partition)

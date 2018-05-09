@@ -186,7 +186,6 @@ const zend_function_entry collection_methods[] = {
     PHP_ME(Collection, minusValuesAssign, elements_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, none, predicate_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, onEach, action_arginfo, ZEND_ACC_PUBLIC)
-    PHP_ME(Collection, orEmpty, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, partition, predicate_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, plus, elements_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, plusAssign, elements_arginfo, ZEND_ACC_PUBLIC)

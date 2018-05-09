@@ -599,13 +599,6 @@ class Collection implements ArrayAccess, Countable
     function onEach($action) {}
 
     /**
-     * Returns this collection if it's not null and the empty collection otherwise.
-     *
-     * @return Collection
-     */
-    function orEmpty() {}
-
-    /**
      * Splits the original collection into pair of collections, where first collection contains
      * elements for which predicate yielded true, while second collection contains elements for
      * which predicate yielded false.
