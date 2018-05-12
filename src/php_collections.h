@@ -28,6 +28,9 @@ extern zend_module_entry collections_module_entry;
 extern PHP_COLLECTIONS_API zend_class_entry* collections_collection_ce;
 extern PHP_COLLECTIONS_API zend_class_entry* collections_pair_ce;
 
+extern zend_string* collections_pair_first;
+extern zend_string* collections_pair_second;
+
 extern zend_object_handlers* collection_handlers;
 
 int count_collection(zval* obj, zend_long* count);
