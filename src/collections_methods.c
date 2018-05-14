@@ -1255,12 +1255,34 @@ PHP_METHOD(Collection, retainAll)
 
 PHP_METHOD(Collection, reverse)
 {
-    
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    ARRAY_NEW_EX(reversed, current);
+    ZEND_HASH_REVERSE_FOREACH_BUCKET(current, Bucket* bucket)
+        ADDREF_IF_REFCOUNTED(bucket->val);
+        if (bucket->key)
+            zend_hash_add(reversed, bucket->key, &bucket->val);
+        else
+            zend_hash_next_index_insert(reversed, &bucket->val);
+    ZEND_HASH_FOREACH_END();
+    if (GC_REFCOUNT(current) > 1)
+        GC_DELREF(current);
+    else
+        zend_array_destroy(current);
+    COLLECTION_FETCH_CURRENT() = reversed;
 }
 
 PHP_METHOD(Collection, reversed)
 {
-    
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    ARRAY_NEW_EX(reversed, current);
+    ZEND_HASH_REVERSE_FOREACH_BUCKET(current, Bucket* bucket)
+        ADDREF_IF_REFCOUNTED(bucket->val);
+        if (bucket->key)
+            zend_hash_add(reversed, bucket->key, &bucket->val);
+        else
+            zend_hash_next_index_insert(reversed, &bucket->val);
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NEW_COLLECTION(reversed);
 }
 
 PHP_METHOD(Collection, shuffle)
