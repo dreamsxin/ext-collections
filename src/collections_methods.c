@@ -1463,7 +1463,8 @@ PHP_METHOD(Collection, takeLast)
         taken[--num_taken] = bucket;
     }
     memset(&taken[0], NULL, num_taken * sizeof(Bucket*));
-    for (int i = 0; i < n; ++i) {
+    int i = 0;
+    for (; i < n; ++i) {
         Bucket* bucket = taken[i];
         if (bucket == NULL)
             continue;
