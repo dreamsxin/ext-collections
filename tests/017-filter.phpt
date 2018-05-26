@@ -11,9 +11,9 @@ $pred_is_even = function ($value) {
 };
 $collection = Collection::init($array)->filter($pred_is_odd);
 $collection1 = Collection::init($array)->filterNot($pred_is_odd);
-if ($collection->toArray() != array_filter($array, $pred_is_odd))
+if ($collection->toArray() != array_values(array_filter($array, $pred_is_odd)))
     echo 'Collection::filter() failed.', PHP_EOL;
-if ($collection1->toArray() != array_filter($array, $pred_is_even))
+if ($collection1->toArray() != array_values(array_filter($array, $pred_is_even)))
     echo 'Collection::filterNot() failed.', PHP_EOL;
 $dest = Collection::init($array);
 $collection2 = Collection::init($array)->filterTo($dest, $pred_is_odd);
