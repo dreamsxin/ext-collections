@@ -840,7 +840,7 @@ class Collection implements ArrayAccess, Countable
     /**
      * Returns a collection containing last elements satisfying the given predicate.
      *
-     * @param $predicate ($value, $key) -> bool
+     * @param callable $predicate ($value, $key) -> bool
      * @return Collection
      */
     function takeLastWhile($predicate) {}
@@ -848,7 +848,7 @@ class Collection implements ArrayAccess, Countable
     /**
      * Returns a collection containing first elements satisfying the given predicate.
      *
-     * @param $predicate ($value, $key) -> bool
+     * @param callable $predicate ($value, $key) -> bool
      * @return Collection
      */
     function takeWhile($predicate) {}

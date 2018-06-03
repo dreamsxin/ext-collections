@@ -1429,6 +1429,8 @@ PHP_METHOD(Collection, take)
             continue;
         --n;
         Z_TRY_ADDREF(bucket->val);
+        // Works for any zend_array, however, it doesn't make sense if you use any of these methods
+        // on non-packed zend_arrays.
         if (bucket->key)
             zend_hash_add_new(new_collection, bucket->key, &bucket->val);
         else if (HT_IS_PACKED(current))
@@ -1481,12 +1483,63 @@ PHP_METHOD(Collection, takeLast)
 
 PHP_METHOD(Collection, takeLastWhile)
 {
-    
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    INIT_FCI(2);
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    ARRAY_NEW_EX(new_collection, current);
+    uint32_t num_elements = zend_hash_num_elements(current);
+    Bucket* taken[num_elements];
+    ZEND_HASH_REVERSE_FOREACH_BUCKET(current, Bucket* bucket)
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
+        if (zend_is_true(&retval))
+            taken[--num_elements] = bucket;
+        else
+            break;
+    ZEND_HASH_FOREACH_END();
+    memset(&taken[0], NULL, num_elements * sizeof(Bucket*));
+    int i = 0;
+    for (; i < zend_hash_num_elements(current); ++i) {
+        Bucket* bucket = taken[i];
+        if (bucket == NULL)
+            continue;
+        Z_TRY_ADDREF(bucket->val);
+        if (bucket->key)
+            zend_hash_add_new(new_collection, bucket->key, &bucket->val);
+        else if (HT_IS_PACKED(current))
+            zend_hash_next_index_insert(new_collection, &bucket->val);
+        else
+            zend_hash_index_add_new(new_collection, bucket->h, &bucket->val);
+    }
+    RETVAL_NEW_COLLECTION(new_collection);
 }
 
 PHP_METHOD(Collection, takeWhile)
 {
-    
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    INIT_FCI(2);
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    ARRAY_NEW_EX(new_collection, current);
+    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
+        if (zend_is_true(&retval)) {
+            if (bucket->key)
+                zend_hash_add_new(new_collection, bucket->key, &bucket->val);
+            else if (HT_IS_PACKED(current))
+                zend_hash_next_index_insert(new_collection, &bucket->val);
+            else
+                zend_hash_index_add_new(new_collection, bucket->h, &bucket->val);
+        } else
+            break;
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NEW_COLLECTION(new_collection);
 }
 
 PHP_METHOD(Collection, toArray)
