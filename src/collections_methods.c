@@ -872,17 +872,62 @@ PHP_METHOD(Collection, groupByTo)
 
 PHP_METHOD(Collection, indexOf)
 {
-    
+    zval* element;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(element)
+    ZEND_PARSE_PARAMETERS_END();
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    INIT_EQUAL_CHECK_FUNC(element);
+    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
+        if (equal_check_func(element, &bucket->val)) {
+            if (bucket->key)
+                RETURN_STR(bucket->key);
+            RETURN_LONG(bucket->h);
+        }
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NULL();
 }
 
 PHP_METHOD(Collection, indexOfFirst)
 {
-    
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    INIT_FCI(1);
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
+        ZVAL_COPY_VALUE(&params[0], &bucket->val);
+        zend_call_function(&fci, &fcc);
+        if (zend_is_true(&retval)) {
+            if (bucket->key)
+                RETURN_STR(bucket->key);
+            RETURN_LONG(bucket->h);
+        }
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NULL();
 }
 
 PHP_METHOD(Collection, indexOfLast)
 {
-    
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    INIT_FCI(1);
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    ZEND_HASH_REVERSE_FOREACH_BUCKET(current, Bucket* bucket)
+        ZVAL_COPY_VALUE(&params[0], &bucket->val);
+        zend_call_function(&fci, &fcc);
+        if (zend_is_true(&retval)) {
+            if (bucket->key)
+                RETURN_STR(bucket->key);
+            RETURN_LONG(bucket->h);
+        }
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NULL();
 }
 
 PHP_METHOD(Collection, init)
@@ -954,6 +999,24 @@ PHP_METHOD(Collection, last)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (zend_is_true(&retval))
             RETURN_ZVAL(&bucket->val, 1, 0);
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NULL();
+}
+
+PHP_METHOD(Collection, lastIndexOf)
+{
+    zval* element;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(element)
+    ZEND_PARSE_PARAMETERS_END();
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    INIT_EQUAL_CHECK_FUNC(element);
+    ZEND_HASH_REVERSE_FOREACH_BUCKET(current, Bucket* bucket)
+        if (equal_check_func(element, &bucket->val)) {
+            if (bucket->key)
+                RETURN_STR(bucket->key);
+            RETURN_LONG(bucket->h);
+        }
     ZEND_HASH_FOREACH_END();
     RETVAL_NULL();
 }
@@ -1361,7 +1424,7 @@ PHP_METHOD(Collection, slice)
 
 PHP_METHOD(Collection, sort)
 {
-    
+
 }
 
 PHP_METHOD(Collection, sortBy)

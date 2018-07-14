@@ -166,6 +166,7 @@ const zend_function_entry collection_methods[] = {
     PHP_ME(Collection, isNotEmpty, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, keys, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, last, predicate_arginfo, ZEND_ACC_PUBLIC)
+    PHP_ME(Collection, lastIndexOf, element_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, map, transform_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, mapKeys, transform_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, mapKeysTo, destination_transform_arginfo, ZEND_ACC_PUBLIC)

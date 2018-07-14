@@ -390,6 +390,14 @@ class Collection implements ArrayAccess, Countable
     function last($predicate) {}
 
     /**
+     * Returns last key of element, or null if the collection does not contain element.
+     *
+     * @param mixed $element
+     * @return int|string|null
+     */
+    function lastIndexOf($element) {}
+
+    /**
      * Returns a collection containing the results of applying the given transform function
      * to each element in the original collection.
      *

@@ -52,6 +52,7 @@ PHP_METHOD(Collection, isEmpty);
 PHP_METHOD(Collection, isNotEmpty);
 PHP_METHOD(Collection, keys);
 PHP_METHOD(Collection, last);
+PHP_METHOD(Collection, lastIndexOf);
 PHP_METHOD(Collection, map);
 PHP_METHOD(Collection, mapKeys);
 PHP_METHOD(Collection, mapKeysTo);
