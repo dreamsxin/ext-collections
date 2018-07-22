@@ -745,6 +745,7 @@ class Collection implements ArrayAccess, Countable
      * Returns a list containing elements at specified keys.
      *
      * @param array|Collection $keys
+     * @return Collection
      */
     function slice($keys) {}
 

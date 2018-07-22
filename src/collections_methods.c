@@ -1419,7 +1419,29 @@ PHP_METHOD(Collection, single)
 
 PHP_METHOD(Collection, slice)
 {
-    
+    zval* elements;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(elements)
+    ZEND_PARSE_PARAMETERS_END();
+    ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    ARRAY_NEW_EX(sliced, current);
+    ZEND_HASH_FOREACH_VAL(elements_arr, zval* val)
+        if (Z_TYPE_P(val) == IS_LONG) {
+            zval* found = zend_hash_index_find(current, Z_LVAL_P(val));
+            if (found) {
+                Z_TRY_ADDREF_P(found);
+                zend_hash_next_index_insert(sliced, found);
+            }
+        } else if (Z_TYPE_P(val) == IS_STRING) {
+            zval* found = zend_hash_find(current, Z_STR_P(val));
+            if (found) {
+                Z_TRY_ADDREF_P(found);
+                zend_hash_add(sliced, Z_STR_P(val), found);
+            }
+        }
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NEW_COLLECTION(sliced);
 }
 
 PHP_METHOD(Collection, sort)
