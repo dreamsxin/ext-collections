@@ -52,7 +52,7 @@ $names = Collection::init($employees)
     ->sortedByDescending(function ($value) {
         return $value['age'];
     })
-    ->mapValues(function ($value) {
+    ->map(function ($value) {
         return $value['name'];
     })
     ->toArray();

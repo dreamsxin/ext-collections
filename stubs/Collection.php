@@ -39,7 +39,7 @@ class Collection implements ArrayAccess, Countable
      * Returns a collection containing key-value pairs provided by transform function applied
      * to elements of the given collection.
      *
-     * @param callable $transform ($value) -> Pair
+     * @param callable $transform ($value, $key) -> Pair
      * @return Collection
      */
     function associate($transform) {}
@@ -49,7 +49,7 @@ class Collection implements ArrayAccess, Countable
      * function applied to each element of the given collection.
      *
      * @param Collection $destination
-     * @param callable $transform ($value) -> Pair
+     * @param callable $transform ($value, $key) -> Pair
      * @return Collection
      */
     function associateTo($destination, $transform) {}
@@ -58,7 +58,7 @@ class Collection implements ArrayAccess, Countable
      * Returns a collection containing the elements from the given collection indexed by the key
      * returned from keySelector function applied to each element.
      *
-     * @param callable $key_selector ($value) -> $key
+     * @param callable $key_selector ($value, $key) -> $new_key
      * @return Collection
      */
     function associateBy($key_selector) {}
@@ -69,7 +69,7 @@ class Collection implements ArrayAccess, Countable
      * and value is the element itself.
      *
      * @param Collection $destination
-     * @param callable $key_selector ($value) -> $key
+     * @param callable $key_selector ($value, $key) -> $new_key
      * @return Collection
      */
     function associateByTo($destination, $key_selector) {}
@@ -398,61 +398,23 @@ class Collection implements ArrayAccess, Countable
     function lastIndexOf($element) {}
 
     /**
-     * Returns a collection containing the results of applying the given transform function
-     * to each element in the original collection.
+     * Returns a collection containing an array of values obtained by applying the transform function
+     * to each element of the original collection.
      *
-     * @param callable $transform ($value, $key) -> Pair
+     * @param callable $transform ($value, $key) -> $new_value
      * @return Collection
      */
     function map($transform) {}
 
     /**
-     * Returns a new collection with entries having the keys obtained by applying the transform function
-     * to each keys and values of this collection.
-     *
-     * @param callable $transform ($value, $key) -> $new_key
-     * @return Collection
-     */
-    function mapKeys($transform) {}
-
-    /**
-     * Populates the given destination collection with entries having the keys obtained by applying the
-     * transform function to each keys and values of this collections.
+     * Populates the given destination collection with an array of values obtained by applying the
+     * transform function to each element of the original collection.
      *
      * @param Collection $destination
-     * @param callable $transform ($value, $key) -> $new_key
-     * @return Collection
-     */
-    function mapKeysTo($destination, $transform) {}
-
-    /**
-     * Applies the given transform function to each element of the original collection and appends the
-     * results to the given destination.
-     *
-     * @param Collection $destination
-     * @param callable $transform ($value, $key) -> Pair
+     * @param callable $transform ($value, $key) -> $new_value
      * @return Collection
      */
     function mapTo($destination, $transform) {}
-
-    /**
-     * Returns a new collection with entries having the keys of this collection and the values obtained
-     * by applying the transform function to each entry in this collection.
-     *
-     * @param callable $transform ($value, $key) -> $new_value
-     * @return Collection
-     */
-    function mapValues($transform) {}
-
-    /**
-     * Populates the given destination collection with entries having the keys of this collection and
-     * the values obtained by applying the transform function to each entry in this collection.
-     *
-     * @param Collection $destination
-     * @param callable $transform ($value, $key) -> $new_value
-     * @return Collection
-     */
-    function mapValuesTo($destination, $transform) {}
 
     /**
      * Returns the largest element or null if there are no elements. The collection should contain
