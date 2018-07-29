@@ -1251,7 +1251,22 @@ PHP_METHOD(Collection, plusValuesAssign)
 
 PHP_METHOD(Collection, putAll)
 {
-    
+    zval* elements;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(elements)
+    ZEND_PARSE_PARAMETERS_END();
+    ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    SEPARATE_CURRENT_COLLECTION(current);
+    ZEND_HASH_FOREACH_BUCKET(elements_arr, Bucket* bucket)
+        Z_TRY_ADDREF(bucket->val);
+        if (bucket->key)
+            zend_hash_update(current, bucket->key, &bucket->val);
+        else if (HT_IS_PACKED(elements_arr))
+            zend_hash_next_index_insert(current, &bucket->val);
+        else
+            zend_hash_index_update(current, bucket->h, &bucket->val);
+    ZEND_HASH_FOREACH_END();
 }
 
 PHP_METHOD(Collection, reduce)
