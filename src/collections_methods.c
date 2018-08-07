@@ -1217,6 +1217,12 @@ PHP_METHOD(Collection, onEach)
     RETVAL_ZVAL(getThis(), 1, 0);
 }
 
+PHP_METHOD(Collection, packed)
+{
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    RETVAL_BOOL(HT_IS_PACKED(current));
+}
+
 PHP_METHOD(Collection, partition)
 {
     zend_fcall_info fci;
@@ -1301,27 +1307,25 @@ PHP_METHOD(Collection, reduce)
         RETURN_NULL();
     }
     INIT_FCI(3);
-    zval acc;
     Bucket* bucket = current->arData;
     Bucket* end = bucket + current->nNumUsed;
     for (; bucket < end; ++bucket) {
         if (Z_ISUNDEF(bucket->val))
             continue;
-        ZVAL_COPY_VALUE(&acc, &(bucket++)->val);
+        ZVAL_COPY(&retval, &(bucket++)->val);
         break;
     }
     for (; bucket < end; ++bucket) {
         if (Z_ISUNDEF(bucket->val))
             continue;
-        ZVAL_COPY_VALUE(&params[0], &acc);
+        ZVAL_COPY_VALUE(&params[0], &retval);
         ZVAL_COPY_VALUE(&params[1], &bucket->val);
         if (bucket->key)
             ZVAL_STR(&params[2], bucket->key);
         else
             ZVAL_LONG(&params[2], bucket->h);
         zend_call_function(&fci, &fcc);
-        zval_ptr_dtor(&acc);
-        ZVAL_COPY_VALUE(&acc, &retval);
+        zval_ptr_dtor(&params[0]);
     }
     RETVAL_ZVAL(&retval, 0, 0);
 }
@@ -1339,27 +1343,25 @@ PHP_METHOD(Collection, reduceRight)
         RETURN_NULL();
     }
     INIT_FCI(3);
-    zval acc;
     Bucket* start = current->arData;
     Bucket* bucket = start + current->nNumUsed - 1;
     for (; bucket >= start; --bucket) {
         if (Z_ISUNDEF(bucket->val))
             continue;
-        ZVAL_COPY_VALUE(&acc, &(bucket--)->val);
+        ZVAL_COPY(&retval, &(bucket--)->val);
         break;
     }
     for (; bucket >= start; --bucket) {
         if (Z_ISUNDEF(bucket->val))
             continue;
-        ZVAL_COPY_VALUE(&params[0], &acc);
+        ZVAL_COPY_VALUE(&params[0], &retval);
         ZVAL_COPY_VALUE(&params[1], &bucket->val);
         if (bucket->key)
             ZVAL_STR(&params[2], bucket->key);
         else
             ZVAL_LONG(&params[2], bucket->h);
         zend_call_function(&fci, &fcc);
-        zval_ptr_dtor(&acc);
-        ZVAL_COPY_VALUE(&acc, &retval);
+        zval_ptr_dtor(&params[0]);
     }
     RETVAL_ZVAL(&retval, 0, 0);
 }

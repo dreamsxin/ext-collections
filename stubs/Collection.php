@@ -569,6 +569,13 @@ class Collection implements ArrayAccess, Countable
     function onEach($action) {}
 
     /**
+     * Check whether the collection wraps a packed hashtable (regular array).
+     *
+     * @return bool
+     */
+    function packed() {}
+
+    /**
      * Splits the original collection into pair of collections, where first collection contains
      * elements for which predicate yielded true, while second collection contains elements for
      * which predicate yielded false.
