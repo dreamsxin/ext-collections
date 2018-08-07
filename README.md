@@ -17,7 +17,7 @@ Method names and functionalities are inspired by [Kotlin.Collections](https://ko
 
 ### 2.1 Functionalities
 
-See [stubs](stubs/) directory for signature of all classes and methods of this extension, with PHPDoc.
+See [stubs](stubs/) directory for signature of all classes and methods of this extension, with PHPDoc. They can also serve as IDE helper.
 
 ### 2.2 PHP-style access
 

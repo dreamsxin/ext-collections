@@ -624,7 +624,7 @@ class Collection implements ArrayAccess, Countable
      * Accumulates value starting with the first element and applying operation from left to right to
      * current accumulator value and each element.
      *
-     * @param $operation ($acc, $value, $key) -> $new_acc
+     * @param callable $operation ($acc, $value, $key) -> $new_acc
      * @return mixed
      */
     function reduce($operation) {}
@@ -633,7 +633,7 @@ class Collection implements ArrayAccess, Countable
      * Accumulates value starting with the last element and applying operation from right to left to
      * each element and current accumulator value.
      *
-     * @param $operation ($acc, $value, $key) -> $new_acc
+     * @param callable $operation ($acc, $value, $key) -> $new_acc
      * @return mixed
      */
     function reduceRight($operation) {}
@@ -712,82 +712,90 @@ class Collection implements ArrayAccess, Countable
     function slice($keys) {}
 
     /**
-     * Sorts the collection in-place according to the natural order of its elements.
+     * Sorts the collection in-place according to the specified order of its elements.
      *
+     * @param int $order[optional]
      * @return void
      */
-    function sort() {}
+    function sort($order = SORT_REGULAR) {}
 
     /**
-     * Sorts elements in the collection in-place according to natural sort order of the value returned
+     * Sorts elements in the collection in-place according to the specified order of the value returned
      * by specified selector function.
      *
      * @param callable $selector ($value, $key) -> $new_value
+     * @param int $flags[optional]
      * @return void
      */
-    function sortBy($selector) {}
+    function sortBy($selector, $flags = SORT_REGULAR) {}
 
     /**
-     * Sorts elements in the collection in-place descending according to natural sort order of the
+     * Sorts elements in the collection in-place descending according to the specified order of the
      * value returned by specified selector function.
      *
      * @param callable $selector ($value, $key) -> $new_value
+     * @param int $flags[optional]
      * @return void
      */
-    function sortByDescending($selector) {}
+    function sortByDescending($selector, $flags = SORT_REGULAR) {}
 
     /**
-     * Sorts elements in the collection in-place descending according to their natural sort order.
+     * Sorts elements in the collection in-place descending according to the specified order.
      *
+     * @param int $flags[optional]
      * @return void
      */
-    function sortDescending() {}
+    function sortDescending($flags = SORT_REGULAR) {}
 
     /**
      * Sorts elements in the collection in-place according to the order specified with comparator.
      *
-     * @param callable $comparator ($value_1, $value_2, $key_1, $key_2) -> int
+     * @param callable $comparator (Pair($key, $value), Pair($key, $value)) -> int
      * @return void
      */
     function sortWith($comparator) {}
 
     /**
-     * Returns a collection of all elements sorted according to their natural sort order.
+     * Returns a collection of all elements sorted according to the specified order.
      *
+     * @param int $flags[optional]
      * @return Collection
      */
-    function sorted() {}
+    function sorted($flags = SORT_REGULAR) {}
 
     /**
-     * Returns a collection of all elements sorted according to natural sort order of the
+     * Returns a collection of all elements sorted according to the specified order of the
      * value returned by specified selector function.
      *
      * @param callable $selector ($value, $key) -> $new_value
+     * @param int $flags[optional]
      * @return Collection
      */
-    function sortedBy($selector) {}
+    function sortedBy($selector, $flags = SORT_REGULAR) {}
 
     /**
-     * Returns a collection of all elements sorted descending according to natural sort order
+     * Returns a collection of all elements sorted descending according to the specified order
      * of the value returned by specified selector function.
      *
      * @param callable $selector ($value, $key) -> $new_value
+     * @param int $flags[optional]
      * @return Collection
      */
-    function sortedByDescending($selector) {}
+    function sortedByDescending($selector, $flags = SORT_REGULAR) {}
 
     /**
-     * Returns a collection of all elements sorted descending according to their natural sort order.
+     * Returns a collection of all elements sorted descending according to the specified order.
      *
      * @param callable $selector ($value, $key) -> $new_value
+     * @param int $flags[optional]
      * @return Collection
      */
-    function sortedDescending($selector) {}
+    function sortedDescending($selector, $flags = SORT_REGULAR) {}
 
     /**
      * Returns a collection of all elements sorted according to the specified comparator.
      *
-     * @param callable $comparator ($value_1, $value_2, $key_1, $key_2) -> int
+     * @param callable $comparator (Pair($key, $value), Pair($key, $value)) -> int
      * @return Collection
      */
     function sortedWith($comparator) {}
