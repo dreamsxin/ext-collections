@@ -1009,7 +1009,7 @@ PHP_METHOD(Collection, last)
         RETURN_NULL();
     if (EX_NUM_ARGS() == 0) {
         HashPosition pos = current->nNumUsed;
-        while (pos >= 0 && Z_ISUNDEF(current->arData[pos].val))
+        while (pos <= current->nNumUsed && Z_ISUNDEF(current->arData[pos].val))
             --pos;
         RETURN_ZVAL(&current->arData[pos].val, 1, 0);
     }

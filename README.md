@@ -11,7 +11,8 @@ Method names and functionalities are inspired by [Kotlin.Collections](https://ko
 
 ### 1.1 Notes
 
-* This extension requires PHP 7.1 and above.
+* Requires PHP 7.1 and above.
+* Currently not working on MacOS. Fix in progress.
 
 ## 2. Documentation
 
