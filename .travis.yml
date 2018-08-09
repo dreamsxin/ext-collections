@@ -13,6 +13,5 @@ script:
   - phpize
   - ./configure
   - make
-
-after_success:
   - make test
+
