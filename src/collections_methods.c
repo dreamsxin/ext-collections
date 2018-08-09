@@ -15,7 +15,7 @@
     zend_object_std_init(name, ce); \
     (name)->handlers = object_handlers
 #define NEW_COLLECTION_OBJ(name) \
-    NEW_OBJ(name, collections_collection_ce, collection_handlers)
+    NEW_OBJ(name, collections_collection_ce, &collection_handlers)
 #define NEW_PAIR_OBJ(name) \
     NEW_OBJ(name, collections_pair_ce, &std_object_handlers); \
     name->properties = (zend_array*)emalloc(sizeof(zend_array)); \

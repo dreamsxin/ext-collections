@@ -31,7 +31,7 @@ extern PHP_COLLECTIONS_API zend_class_entry* collections_pair_ce;
 extern zend_string* collections_pair_first;
 extern zend_string* collections_pair_second;
 
-extern zend_object_handlers* collection_handlers;
+extern zend_object_handlers collection_handlers;
 
 int count_collection(zval* obj, zend_long* count);
 int collection_offset_exists(zval* object, zval* offset, int check_empty);
