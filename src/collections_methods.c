@@ -223,8 +223,11 @@ PHP_METHOD(Collection, all)
     zend_array* current = COLLECTION_FETCH_CURRENT();
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
-        if (!zend_is_true(&retval))
+        if (!zend_is_true(&retval)) {
+            zval_ptr_dtor(&retval);
             RETURN_FALSE;
+        }
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
     RETURN_TRUE;
 }
@@ -240,8 +243,11 @@ PHP_METHOD(Collection, any)
     zend_array* current = COLLECTION_FETCH_CURRENT();
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
-        if (zend_is_true(&retval))
+        if (zend_is_true(&retval)) {
+            zval_ptr_dtor(&retval);
             RETURN_TRUE;
+        }
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
     RETURN_FALSE;
 }
@@ -269,9 +275,9 @@ PHP_METHOD(Collection, associate)
                 zend_hash_next_index_insert(new_collection, value);
             else
                 ERR_BAD_KEY_TYPE();
-            zval_ptr_dtor(&retval);
         } else
             ERR_BAD_CALLBACK_RETVAL();
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
     RETVAL_NEW_COLLECTION(new_collection);
 }
@@ -302,9 +308,9 @@ PHP_METHOD(Collection, associateTo)
                 zend_hash_next_index_insert(dest_arr, value);
             else
                 ERR_BAD_KEY_TYPE();
-            zval_ptr_dtor(&retval);
         } else
             ERR_BAD_CALLBACK_RETVAL();
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
     RETVAL_ZVAL(dest, 1, 0);
 }
@@ -327,6 +333,7 @@ PHP_METHOD(Collection, associateBy)
             zend_hash_add(new_collection, Z_STR(retval), &bucket->val);
         else
             ERR_BAD_CALLBACK_RETVAL();
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
     RETVAL_NEW_COLLECTION(new_collection);
 }
@@ -352,6 +359,7 @@ PHP_METHOD(Collection, associateByTo)
             zend_hash_add(dest_arr, Z_STR(retval), &bucket->val);
         else
             ERR_BAD_CALLBACK_RETVAL();
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
     RETVAL_ZVAL(dest, 1, 0);
 }
@@ -566,10 +574,13 @@ PHP_METHOD(Collection, dropLastWhile)
     ARRAY_CLONE(new_collection, current);
     ZEND_HASH_REVERSE_FOREACH_BUCKET(new_collection, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
-        if (zend_is_true(&retval))
+        if (zend_is_true(&retval)) {
+            zval_ptr_dtor(&retval);
             zend_hash_del_bucket(new_collection, bucket);
-        else
+        } else {
+            zval_ptr_dtor(&retval);
             break;
+        }
     ZEND_HASH_FOREACH_END();
     RETVAL_NEW_COLLECTION(new_collection);
 }
@@ -586,10 +597,13 @@ PHP_METHOD(Collection, dropWhile)
     ARRAY_CLONE(new_collection, current);
     ZEND_HASH_FOREACH_BUCKET(new_collection, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
-        if (zend_is_true(&retval))
+        if (zend_is_true(&retval)) {
+            zval_ptr_dtor(&retval);
             zend_hash_del_bucket(new_collection, bucket);
-        else
+        } else {
+            zval_ptr_dtor(&retval);
             break;
+        }
     ZEND_HASH_FOREACH_END();
     RETVAL_NEW_COLLECTION(new_collection);
 }
@@ -639,6 +653,7 @@ PHP_METHOD(Collection, filter)
             else
                 zend_hash_index_add(new_collection, bucket->h, &bucket->val);
         }
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
     RETVAL_NEW_COLLECTION(new_collection);
 }
@@ -663,6 +678,7 @@ PHP_METHOD(Collection, filterNot)
             else
                 zend_hash_index_add(new_collection, bucket->h, &bucket->val);
         }
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
     RETVAL_NEW_COLLECTION(new_collection);
 }
@@ -690,6 +706,7 @@ PHP_METHOD(Collection, filterNotTo)
             else
                 zend_hash_index_add(dest_arr, bucket->h, &bucket->val);
         }
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
     RETVAL_ZVAL(dest, 1, 0);
 }
@@ -717,6 +734,7 @@ PHP_METHOD(Collection, filterTo)
             else
                 zend_hash_index_add(dest_arr, bucket->h, &bucket->val);
         }
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
     RETVAL_ZVAL(dest, 1, 0);
 }
@@ -741,8 +759,11 @@ PHP_METHOD(Collection, first)
     INIT_FCI(2);
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
-        if (zend_is_true(&retval))
+        if (zend_is_true(&retval)) {
+            zval_ptr_dtor(&retval);
             RETURN_ZVAL(&bucket->val, 1, 0);
+        }
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
     RETVAL_NULL();
 }
@@ -827,12 +848,52 @@ PHP_METHOD(Collection, flatten)
 
 PHP_METHOD(Collection, fold)
 {
-    
+    zval* initial;
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_ZVAL(initial)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    INIT_FCI(3);
+    ZVAL_COPY(&params[0], initial);
+    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
+        ZVAL_COPY_VALUE(&params[1], &bucket->val);
+        if (bucket->key)
+            ZVAL_STR(&params[2], bucket->key);
+        else
+            ZVAL_LONG(&params[2], bucket->h);
+        zend_call_function(&fci, &fcc);
+        zval_ptr_dtor(&params[0]);
+        ZVAL_COPY_VALUE(&params[0], &retval);
+    ZEND_HASH_FOREACH_END();
+    RETVAL_ZVAL(&retval, 0, 0);
 }
 
 PHP_METHOD(Collection, foldRight)
 {
-    
+    zval* initial;
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_ZVAL(initial)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    INIT_FCI(3);
+    ZVAL_COPY(&params[0], initial);
+    ZEND_HASH_REVERSE_FOREACH_BUCKET(current, Bucket* bucket)
+        ZVAL_COPY_VALUE(&params[1], &bucket->val);
+        if (bucket->key)
+            ZVAL_STR(&params[2], bucket->key);
+        else
+            ZVAL_LONG(&params[2], bucket->h);
+        zend_call_function(&fci, &fcc);
+        zval_ptr_dtor(&params[0]);
+        ZVAL_COPY_VALUE(&params[0], &retval);
+    ZEND_HASH_FOREACH_END();
+    RETVAL_ZVAL(&retval, 0, 0);
 }
 
 PHP_METHOD(Collection, forEach)
@@ -846,6 +907,7 @@ PHP_METHOD(Collection, forEach)
     zend_array* current = COLLECTION_FETCH_CURRENT();
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
 }
 
@@ -876,7 +938,7 @@ PHP_METHOD(Collection, get)
     INIT_FCI(1);
     ZVAL_COPY_VALUE(&params[0], key);
     zend_call_function(&fci, &fcc);
-    RETVAL_ZVAL(&retval, 1, 0);
+    RETVAL_ZVAL(&retval, 0, 0);
 }
 
 PHP_METHOD(Collection, groupBy)
@@ -920,10 +982,12 @@ PHP_METHOD(Collection, indexOfFirst)
         ZVAL_COPY_VALUE(&params[0], &bucket->val);
         zend_call_function(&fci, &fcc);
         if (zend_is_true(&retval)) {
+            zval_ptr_dtor(&retval);
             if (bucket->key)
                 RETURN_STR(bucket->key);
             RETURN_LONG(bucket->h);
         }
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
     RETVAL_NULL();
 }
@@ -941,10 +1005,12 @@ PHP_METHOD(Collection, indexOfLast)
         ZVAL_COPY_VALUE(&params[0], &bucket->val);
         zend_call_function(&fci, &fcc);
         if (zend_is_true(&retval)) {
+            zval_ptr_dtor(&retval);
             if (bucket->key)
                 RETURN_STR(bucket->key);
             RETURN_LONG(bucket->h);
         }
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
     RETVAL_NULL();
 }
@@ -1016,8 +1082,11 @@ PHP_METHOD(Collection, last)
     INIT_FCI(2);
     ZEND_HASH_REVERSE_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
-        if (zend_is_true(&retval))
+        if (zend_is_true(&retval)) {
+            zval_ptr_dtor(&retval);
             RETURN_ZVAL(&bucket->val, 1, 0);
+        }
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
     RETVAL_NULL();
 }
@@ -1196,8 +1265,11 @@ PHP_METHOD(Collection, none)
     zend_array* current = COLLECTION_FETCH_CURRENT();
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
-        if (zend_is_true(&retval))
+        if (zend_is_true(&retval)) {
+            zval_ptr_dtor(&retval);
             RETURN_FALSE;
+        }
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
     RETURN_TRUE;
 }
@@ -1213,6 +1285,7 @@ PHP_METHOD(Collection, onEach)
     zend_array* current = COLLECTION_FETCH_CURRENT();
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
     RETVAL_ZVAL(getThis(), 1, 0);
 }
@@ -1245,6 +1318,7 @@ PHP_METHOD(Collection, partition)
             zend_hash_next_index_insert(which, &bucket->val);
         else
             zend_hash_index_add(which, bucket->h, &bucket->val);
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
     zval first, second;
     ZVAL_ARR(&first, first_arr);
@@ -1416,6 +1490,7 @@ PHP_METHOD(Collection, removeAll)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (zend_is_true(&retval))
             zend_hash_del_bucket(current, bucket);
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
 }
 
@@ -1438,6 +1513,7 @@ PHP_METHOD(Collection, retainAll)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (!zend_is_true(&retval))
             zend_hash_del_bucket(current, bucket);
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
 }
 
@@ -1520,6 +1596,7 @@ PHP_METHOD(Collection, single)
             else
                 RETURN_NULL();
         }
+        zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
     if (Z_TYPE(single) == IS_UNDEF)
         RETURN_NULL()
@@ -1689,10 +1766,13 @@ PHP_METHOD(Collection, takeLastWhile)
     Bucket* taken[num_elements];
     ZEND_HASH_REVERSE_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
-        if (zend_is_true(&retval))
+        if (zend_is_true(&retval)) {
+            zval_ptr_dtor(&retval);
             taken[--num_elements] = bucket;
-        else
+        } else {
+            zval_ptr_dtor(&retval);
             break;
+        }
     ZEND_HASH_FOREACH_END();
     memset(&taken[0], 0, num_elements * sizeof(Bucket*));
     int i = 0;
@@ -1724,14 +1804,17 @@ PHP_METHOD(Collection, takeWhile)
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (zend_is_true(&retval)) {
+            zval_ptr_dtor(&retval);
             if (bucket->key)
                 zend_hash_add_new(new_collection, bucket->key, &bucket->val);
             else if (HT_IS_PACKED(current))
                 zend_hash_next_index_insert(new_collection, &bucket->val);
             else
                 zend_hash_index_add_new(new_collection, bucket->h, &bucket->val);
-        } else
+        } else {
+            zval_ptr_dtor(&retval);
             break;
+        }
     ZEND_HASH_FOREACH_END();
     RETVAL_NEW_COLLECTION(new_collection);
 }
