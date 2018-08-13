@@ -5,6 +5,7 @@
 //
 
 #include <php.h>
+#include <ext/standard/php_mt_rand.h>
 
 #include "php_collections.h"
 #include "php_collections_me.h"
@@ -1479,7 +1480,40 @@ PHP_METHOD(Collection, reversed)
 
 PHP_METHOD(Collection, shuffle)
 {
-    
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    uint32_t num_elements = zend_hash_num_elements(current);
+    ARRAY_NEW(shuffled, num_elements);
+    ZEND_HASH_FOREACH_VAL(current, zval* val)
+        zend_hash_next_index_insert(shuffled, val);
+    ZEND_HASH_FOREACH_END();
+    size_t offset = 0;
+    Bucket* bucket = shuffled->arData;
+    for (; offset < num_elements - 1; ++offset) {
+        zend_long rand_idx = php_mt_rand_range(offset, num_elements - 1);
+        zend_hash_bucket_renum_swap(&bucket[offset], &bucket[rand_idx]);
+    }
+    if (GC_REFCOUNT(current) > 1)
+        GC_DELREF(current);
+    else
+        zend_hash_destroy(current);
+    COLLECTION_FETCH_CURRENT() = shuffled;
+}
+
+PHP_METHOD(Collection, shuffled)
+{
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    uint32_t num_elements = zend_hash_num_elements(current);
+    ARRAY_NEW(shuffled, num_elements);
+    ZEND_HASH_FOREACH_VAL(current, zval* val)
+        zend_hash_next_index_insert(shuffled, val);
+    ZEND_HASH_FOREACH_END();
+    size_t offset = 0;
+    Bucket* bucket = shuffled->arData;
+    for (; offset < num_elements - 1; ++offset) {
+        zend_long rand_idx = php_mt_rand_range(offset, num_elements - 1);
+        zend_hash_bucket_renum_swap(&bucket[offset], &bucket[rand_idx]);
+    }
+    RETVAL_NEW_COLLECTION(shuffled);
 }
 
 PHP_METHOD(Collection, set)

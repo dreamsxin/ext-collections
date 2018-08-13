@@ -84,6 +84,7 @@ PHP_METHOD(Collection, retainAll);
 PHP_METHOD(Collection, reverse);
 PHP_METHOD(Collection, reversed);
 PHP_METHOD(Collection, shuffle);
+PHP_METHOD(Collection, shuffled);
 PHP_METHOD(Collection, set);
 PHP_METHOD(Collection, single);
 PHP_METHOD(Collection, slice);

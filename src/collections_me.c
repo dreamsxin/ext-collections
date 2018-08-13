@@ -198,6 +198,7 @@ const zend_function_entry collection_methods[] = {
     PHP_ME(Collection, reverse, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, reversed, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, shuffle, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Collection, shuffled, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, set, key_value_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, single, predicate_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, slice, keys_arginfo, ZEND_ACC_PUBLIC)

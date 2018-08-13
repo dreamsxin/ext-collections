@@ -695,11 +695,18 @@ class Collection implements ArrayAccess, Countable
     function set($key, $value) {}
 
     /**
-     * Randomly shuffles elements in this collection.
+     * Randomly shuffles elements in this collection. Keys will be discarded.
+     *
+     * @return void
+     */
+    function shuffle() {}
+
+    /**
+     * Returns a shuffled copy of this collection. Keys will be discarded.
      *
      * @return Collection
      */
-    function shuffle() {}
+    function shuffled() {}
 
     /**
      * Returns the single element matching the given predicate, or null if there is no or more than
