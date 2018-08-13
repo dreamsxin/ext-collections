@@ -2098,7 +2098,7 @@ PHP_METHOD(Collection, takeLast)
     ARRAY_NEW(new_collection, n > num_elements ? num_elements : n);
     uint32_t idx = current->nNumUsed;
     zend_long num_taken = n;
-    Bucket* taken[num_taken];
+    Bucket** taken = (Bucket**)malloc(num_taken * sizeof(Bucket*));
     // Note that the original element orders should be preserved as in kotlin.
     for (; num_taken > 0 && idx > 0; --idx)
     {
@@ -2132,6 +2132,7 @@ PHP_METHOD(Collection, takeLast)
             zend_hash_index_add_new(new_collection, bucket->h, &bucket->val);
         }
     }
+    free(taken);
     RETVAL_NEW_COLLECTION(new_collection);
 }
 
@@ -2146,7 +2147,7 @@ PHP_METHOD(Collection, takeLastWhile)
     zend_array* current = COLLECTION_FETCH_CURRENT();
     ARRAY_NEW_EX(new_collection, current);
     uint32_t num_elements = zend_hash_num_elements(current);
-    Bucket* taken[num_elements];
+    Bucket** taken = (Bucket**)malloc(num_elements * sizeof(Bucket*));
     ZEND_HASH_REVERSE_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (zend_is_true(&retval))
@@ -2182,6 +2183,7 @@ PHP_METHOD(Collection, takeLastWhile)
             zend_hash_index_add_new(new_collection, bucket->h, &bucket->val);
         }
     }
+    free(taken);
     RETVAL_NEW_COLLECTION(new_collection);
 }
 
