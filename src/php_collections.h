@@ -25,6 +25,22 @@ extern zend_module_entry collections_module_entry;
 #define GC_DELREF(p) --GC_REFCOUNT(p)
 #endif
 
+ZEND_BEGIN_MODULE_GLOBALS(collections)
+    zend_fcall_info* fci;
+    zend_fcall_info_cache* fcc;
+ZEND_END_MODULE_GLOBALS(collections)
+
+ZEND_EXTERN_MODULE_GLOBALS(collections)
+
+#ifdef ZTS
+#ifdef COMPILE_DL_COLLECTIONS
+ZEND_TSRMLS_CACHE_EXTERN()
+#endif
+#define COLLECTIONS_G(v) TSRMG(collections_globals_id, zend_collections_globals*, v)
+#else
+#define COLLECTIONS_G(v) (collections_globals.v)
+#endif
+
 extern PHP_COLLECTIONS_API zend_class_entry* collections_collection_ce;
 extern PHP_COLLECTIONS_API zend_class_entry* collections_pair_ce;
 

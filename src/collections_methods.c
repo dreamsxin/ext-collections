@@ -123,6 +123,9 @@
         return;                                                            \
     }
 
+#define FCI_G    COLLECTIONS_G(fci)
+#define FCC_G    COLLECTIONS_G(fcc)
+
 /// Unused global variable.
 zval rv;
 

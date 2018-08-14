@@ -22,6 +22,8 @@ zend_class_entry* collections_pair_ce;
 zend_string* collections_pair_first;
 zend_string* collections_pair_second;
 
+ZEND_DECLARE_MODULE_GLOBALS(collections)
+
 PHP_MINIT_FUNCTION(collections)
 {
     collections_pair_first = zend_string_init("first", sizeof "first" - 1, 1);
