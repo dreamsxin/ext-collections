@@ -145,21 +145,21 @@
 /// Unused global variable.
 zval rv;
 
-static zend_always_inline int bucket_compare_numeric(const void* op1, const void* op2)
+static int bucket_compare_numeric(const void* op1, const void* op2)
 {
     Bucket* b1 = (Bucket*)op1;
     Bucket* b2 = (Bucket*)op2;
     return numeric_compare_function(&b1->val, &b2->val);
 }
 
-static zend_always_inline int bucket_compare_string(const void* op1, const void* op2)
+static int bucket_compare_string(const void* op1, const void* op2)
 {
     Bucket* b1 = (Bucket*)op1;
     Bucket* b2 = (Bucket*)op2;
     return string_compare_function(&b1->val, &b2->val);
 }
 
-static zend_always_inline int bucket_compare_regular(const void* op1, const void* op2)
+static int bucket_compare_regular(const void* op1, const void* op2)
 {
     Bucket* b1 = (Bucket*)op1;
     Bucket* b2 = (Bucket*)op2;
@@ -171,7 +171,7 @@ static zend_always_inline int bucket_compare_regular(const void* op1, const void
     return ZEND_NORMALIZE_BOOL(Z_LVAL(result));
 }
 
-static zend_always_inline int bucket_compare_userland(const void* op1, const void* op2)
+static int bucket_compare_userland(const void* op1, const void* op2)
 {
     Bucket* b1 = (Bucket*)op1;
     Bucket* b2 = (Bucket*)op2;
