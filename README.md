@@ -12,6 +12,9 @@ Method names and functionalities are inspired by [Kotlin.Collections](https://ko
 ### 1.1 Notes
 
 * Requires PHP 7.1 and above.
+* Thread safety:
+  * Distinct objects: **safe**.
+  * Shared objects: **unsafe**.
 
 ## 2. Documentation
 

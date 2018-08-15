@@ -1,5 +1,8 @@
 ARG_ENABLE("collections", "enable collections support", "no");
 
 if (PHP_COLLECTIONS != "no") {
-    EXTENSION("collections", "src/collections.c src/collections_me.c src/collections_methods.c", true);
+    SRC="src/collections.c \
+        src/collections_me.c \
+        src/collections_methods.c"
+    EXTENSION("collections", SRC, true, "/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1");
 }
