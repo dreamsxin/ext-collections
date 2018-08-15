@@ -437,7 +437,7 @@ class Collection implements ArrayAccess, Countable
      * Returns the first element having the largest value according to the provided comparator or
      * null if there are no elements.
      *
-     * @param callable $comparator ($value_1, $value_2, $key_1, $key_2) -> int
+     * @param callable $comparator (Pair($key, $value), Pair($key, $value)) -> int
      * @return mixed
      */
     function maxWith($comparator) {}
@@ -463,7 +463,7 @@ class Collection implements ArrayAccess, Countable
      * Returns the first element having the smallest value according to the provided comparator or
      * null if there are no elements.
      *
-     * @param callable $comparator ($value_1, $value_2, $key_1, $key_2) -> int
+     * @param callable $comparator (Pair($key, $value), Pair($key, $value)) -> int
      * @return mixed
      */
     function minWith($comparator) {}
