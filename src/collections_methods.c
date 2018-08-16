@@ -1857,17 +1857,11 @@ PHP_METHOD(Collection, retainAll)
 {
     zend_fcall_info fci;
     zend_fcall_info_cache fcc;
-    ZEND_PARSE_PARAMETERS_START(0, 1)
-        Z_PARAM_OPTIONAL
+    ZEND_PARSE_PARAMETERS_START(1, 1)
         Z_PARAM_FUNC(fci, fcc)
     ZEND_PARSE_PARAMETERS_END();
     zend_array* current = COLLECTION_FETCH_CURRENT();
     SEPARATE_CURRENT_COLLECTION(current);
-    if (EX_NUM_ARGS() == 0)
-    {
-        zend_hash_clean(current);
-        return;
-    }
     INIT_FCI(&fci, 2);
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
