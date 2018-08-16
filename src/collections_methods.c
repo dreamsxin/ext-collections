@@ -56,16 +56,17 @@
 #define BUCKET_2_PAIR(pair, bucket)                                        \
     {                                                                      \
         zval _key;                                                         \
-        if (bucket->key)                                                   \
+        if ((bucket)->key)                                                 \
         {                                                                  \
-            ZVAL_STR(&_key, bucket->key);                                  \
+            GC_ADDREF((bucket)->key);                                      \
+            ZVAL_STR(&_key, (bucket)->key);                                \
         }                                                                  \
         else                                                               \
         {                                                                  \
-            ZVAL_LONG(&_key, bucket->h);                                   \
+            ZVAL_LONG(&_key, (bucket)->h);                                 \
         }                                                                  \
         PAIR_UPDATE_FIRST(pair, &_key);                                    \
-        PAIR_UPDATE_SECOND(pair, &bucket->val);                            \
+        PAIR_UPDATE_SECOND(pair, &(bucket)->val);                          \
     }
 
 #define CALLBACK_KEYVAL_INVOKE(params, bucket)                             \
@@ -179,7 +180,9 @@ static int bucket_compare_userland(const void* op1, const void* op2)
     ZVAL_COPY_VALUE(&params[0], &b1->val);
     ZVAL_COPY_VALUE(&params[1], &b2->val);
     zend_call_function(FCI_G, FCC_G);
-    return ZEND_NORMALIZE_BOOL(zval_get_long(&retval));
+    int result = ZEND_NORMALIZE_BOOL(zval_get_long(&retval));
+    zval_ptr_dtor(&retval);
+    return result;
 }
 
 int count_collection(zval* obj, zend_long* count)
