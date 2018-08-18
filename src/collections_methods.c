@@ -2081,7 +2081,35 @@ PHP_METHOD(Collection, sortDescending)
 
 PHP_METHOD(Collection, sortWith)
 {
-    
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    FCI_G = &fci;
+    FCC_G = &fcc;
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    zend_array* sorted_with = zend_array_dup(current);
+    ZEND_HASH_FOREACH_BUCKET(sorted_with, Bucket* bucket)
+        NEW_PAIR_OBJ(obj);
+        BUCKET_2_PAIR(obj, bucket);
+        ZVAL_OBJ(&bucket->val, obj);
+    ZEND_HASH_FOREACH_END();
+    zend_hash_sort(sorted_with, bucket_compare_userland, 1);
+    ZEND_HASH_FOREACH_VAL(sorted_with, zval* val)
+        zend_object* pair = Z_OBJ_P(val);
+        ZVAL_COPY_VALUE(val, PAIR_FETCH_SECOND(pair));
+        GC_DELREF(pair);
+    ZEND_HASH_FOREACH_END();
+    if (GC_REFCOUNT(current) > 1)
+    {
+        GC_DELREF(current);
+    }
+    else
+    {
+        zend_array_destroy(current);
+    }
+    COLLECTION_FETCH_CURRENT() = sorted_with;
 }
 
 PHP_METHOD(Collection, sorted)
@@ -2106,7 +2134,27 @@ PHP_METHOD(Collection, sortedDescending)
 
 PHP_METHOD(Collection, sortedWith)
 {
-    
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    FCI_G = &fci;
+    FCC_G = &fcc;
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    zend_array* sorted_with = zend_array_dup(current);
+    ZEND_HASH_FOREACH_BUCKET(sorted_with, Bucket* bucket)
+        NEW_PAIR_OBJ(obj);
+        BUCKET_2_PAIR(obj, bucket);
+        ZVAL_OBJ(&bucket->val, obj);
+    ZEND_HASH_FOREACH_END();
+    zend_hash_sort(sorted_with, bucket_compare_userland, 1);
+    ZEND_HASH_FOREACH_VAL(sorted_with, zval* val)
+        zend_object* pair = Z_OBJ_P(val);
+        ZVAL_COPY_VALUE(val, PAIR_FETCH_SECOND(pair));
+        GC_DELREF(pair);
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NEW_COLLECTION(sorted_with);
 }
 
 PHP_METHOD(Collection, take)
