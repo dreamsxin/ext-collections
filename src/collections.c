@@ -34,6 +34,10 @@ PHP_MINIT_FUNCTION(collections)
     zend_class_entry collection_ce;
     INIT_CLASS_ENTRY_EX(collection_ce, "Collection", sizeof "Collection" - 1, collection_methods);
     collections_collection_ce = zend_register_internal_class(&collection_ce);
+    zend_declare_class_constant_long(collections_collection_ce,
+        "COMPARE_NATRUAL", sizeof "COMPARE_NATRUAL" - 1, PHP_COLLECTIONS_COMPARE_NATURAL);
+    zend_declare_class_constant_long(collections_collection_ce,
+        "FOLD_CASE", sizeof "FOLD_CASE" - 1, PHP_COLLECTIONS_FOLD_CASE);
     zend_class_implements(collections_collection_ce,
 #if PHP_VERSION_ID < 70200
         1,

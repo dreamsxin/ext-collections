@@ -6,6 +6,17 @@
 class Collection implements ArrayAccess, Countable
 {
     /**
+     * Compare strings in alphabetical order, except that multi-digit numbers are ordered as a
+     * single character. Only used when comparing strings.
+     */
+    const COMPARE_NATRUAL = 1;
+
+    /**
+     * Elements will be campared in a case-insensitive manner. Only used when comparing strings.
+     */
+    const FOLD_CASE = 2;
+
+    /**
      * Private constructor.
      * The Collection class should be initialized with static method Collection::init($data).
      */
@@ -420,18 +431,20 @@ class Collection implements ArrayAccess, Countable
      * Returns the largest element or null if there are no elements. The collection should contain
      * only one type of numeric elements(int/double).
      *
+     * @param int $flags[optional]
      * @return mixed
      */
-    function max() {}
+    function max($flags) {}
 
     /**
      * Returns the first element yielding the largest value of the given function or null if
      * there are no elements.
      *
      * @param callable $selector ($value, $key) -> $new_value
+     * @param int $flags[optional]
      * @return mixed
      */
-    function maxBy($selector) {}
+    function maxBy($selector, $flags) {}
 
     /**
      * Returns the first element having the largest value according to the provided comparator or
@@ -446,18 +459,20 @@ class Collection implements ArrayAccess, Countable
      * Returns the largest element or null if there are no elements. The collection should contain
      * only one type of numeric elements(int/double).
      *
+     * @param int $flags[optional]
      * @return mixed
      */
-    function min() {}
+    function min($flags) {}
 
     /**
      * Returns the first element yielding the smallest value of the given function or null if
      * there are no elements.
      *
      * @param callable $selector ($value, $key) -> $new_value
+     * @param int $flags[optional]
      * @return mixed
      */
-    function minBy($selector) {}
+    function minBy($selector, $flags) {}
 
     /**
      * Returns the first element having the smallest value according to the provided comparator or
@@ -731,7 +746,7 @@ class Collection implements ArrayAccess, Countable
      * @param int $order[optional]
      * @return void
      */
-    function sort($order = SORT_REGULAR) {}
+    function sort($order) {}
 
     /**
      * Sorts elements in the collection in-place according to the specified order of the value returned
@@ -741,7 +756,7 @@ class Collection implements ArrayAccess, Countable
      * @param int $flags[optional]
      * @return void
      */
-    function sortBy($selector, $flags = SORT_REGULAR) {}
+    function sortBy($selector, $flags) {}
 
     /**
      * Sorts elements in the collection in-place descending according to the specified order of the
@@ -751,7 +766,7 @@ class Collection implements ArrayAccess, Countable
      * @param int $flags[optional]
      * @return void
      */
-    function sortByDescending($selector, $flags = SORT_REGULAR) {}
+    function sortByDescending($selector, $flags) {}
 
     /**
      * Sorts elements in the collection in-place descending according to the specified order.
@@ -759,7 +774,7 @@ class Collection implements ArrayAccess, Countable
      * @param int $flags[optional]
      * @return void
      */
-    function sortDescending($flags = SORT_REGULAR) {}
+    function sortDescending($flags) {}
 
     /**
      * Sorts elements in the collection in-place according to the order specified with comparator.
@@ -775,7 +790,7 @@ class Collection implements ArrayAccess, Countable
      * @param int $flags[optional]
      * @return Collection
      */
-    function sorted($flags = SORT_REGULAR) {}
+    function sorted($flags) {}
 
     /**
      * Returns a collection of all elements sorted according to the specified order of the
@@ -785,7 +800,7 @@ class Collection implements ArrayAccess, Countable
      * @param int $flags[optional]
      * @return Collection
      */
-    function sortedBy($selector, $flags = SORT_REGULAR) {}
+    function sortedBy($selector, $flags) {}
 
     /**
      * Returns a collection of all elements sorted descending according to the specified order
@@ -795,7 +810,7 @@ class Collection implements ArrayAccess, Countable
      * @param int $flags[optional]
      * @return Collection
      */
-    function sortedByDescending($selector, $flags = SORT_REGULAR) {}
+    function sortedByDescending($selector, $flags) {}
 
     /**
      * Returns a collection of all elements sorted descending according to the specified order.
@@ -804,7 +819,7 @@ class Collection implements ArrayAccess, Countable
      * @param int $flags[optional]
      * @return Collection
      */
-    function sortedDescending($selector, $flags = SORT_REGULAR) {}
+    function sortedDescending($selector, $flags) {}
 
     /**
      * Returns a collection of all elements sorted according to the specified comparator.

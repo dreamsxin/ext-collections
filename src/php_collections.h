@@ -25,6 +25,9 @@ extern zend_module_entry collections_module_entry;
 #define GC_DELREF(p) --GC_REFCOUNT(p)
 #endif
 
+#define PHP_COLLECTIONS_COMPARE_NATURAL  (1 << 0)
+#define PHP_COLLECTIONS_FOLD_CASE        (1 << 1)
+
 ZEND_BEGIN_MODULE_GLOBALS(collections)
     zend_fcall_info* fci;
     zend_fcall_info_cache* fcc;
