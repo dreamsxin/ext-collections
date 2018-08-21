@@ -73,7 +73,6 @@
 #define ERR_BAD_SIZE() PHP_COLLECTIONS_ERROR(E_WARNING, "Size must be non-negative")
 #define ERR_BAD_INDEX() PHP_COLLECTIONS_ERROR(E_WARNING, "Index must be non-negative")
 #define ERR_NOT_ARITHMETIC() PHP_COLLECTIONS_ERROR(E_WARNING, "Elements should be int or double")
-#define ERR_BAD_FLAG() PHP_COLLECTIONS_ERROR(E_WARNING, "Invalid compare flag")
 #define ERR_SILENCED()
 
 #define ELEMENTS_VALIDATE(elements, err, err_then)                         \

@@ -31,15 +31,10 @@ The `Collection` class implements `ArrayAccess` and `Countable` interface intern
 * `empty()`, `count()` can be used on instance of `Collection`.
 * Elements can be traversed via `foreach()` keyword.
 
-### 2.3 Comparing elements
-
-Some methods of `Collection` involves comparing two of its elements, which accepts `$flags` as one of its arguments.
-
-When these methods are being invoked, type of the very first element of the `Collection` represents that of all other ones. Make sure all elements are of the same type (numeric/string/others), otherwise you're likely to get a segfault.
-
 ### 2.4 Notes
 
 * The `Collection::xxxTo()` methods will preserve the original key-value pairs of destination `Collection` when keys collide.
+* Some methods of `Collection` involves comparing two of its elements, which accepts `$flags` as one of its arguments. When these methods are being invoked, make sure all elements are of the same type (numeric/string/others), otherwise you're likely to get a segfault.
 
 ## 3. Example
 
