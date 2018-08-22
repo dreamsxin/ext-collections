@@ -743,10 +743,10 @@ class Collection implements ArrayAccess, Countable
     /**
      * Sorts the collection in-place according to the specified order of its elements.
      *
-     * @param int $order[optional]
+     * @param int $flags[optional]
      * @return void
      */
-    function sort($order) {}
+    function sort($flags) {}
 
     /**
      * Sorts elements in the collection in-place according to the specified order of the value returned

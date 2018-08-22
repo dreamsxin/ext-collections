@@ -8,25 +8,29 @@
 #define PHP_COLLECTIONS_H
 
 extern zend_module_entry collections_module_entry;
-#define phpext_collections_ptr &collections_module_entry
+#define phpext_collections_ptr          &collections_module_entry
 
-#define PHP_COLLECTIONS_VERSION "0.1.0"
+#define PHP_COLLECTIONS_VERSION         "0.1.0"
 
 #ifdef PHP_WIN32
-#define PHP_COLLECTIONS_API __declspec(dllexport)
+#define PHP_COLLECTIONS_API             __declspec(dllexport)
 #elif defined(__GNUC__) && __GNUC__ >= 4
-#define PHP_COLLECTIONS_API __attribute__ ((visibility("default")))
+#define PHP_COLLECTIONS_API             __attribute__ ((visibility("default")))
 #else
 #define PHP_COLLECTIONS_API
 #endif
 
-#if PHP_VERSION_ID < 70300
-#define GC_ADDREF(p) ++GC_REFCOUNT(p)
-#define GC_DELREF(p) --GC_REFCOUNT(p)
+#if PHP_VERSION_ID < 70100
+#error "This extension requires PHP 7.1 and above."
 #endif
 
-#define PHP_COLLECTIONS_COMPARE_NATURAL  (1 << 0)
-#define PHP_COLLECTIONS_FOLD_CASE        (1 << 1)
+#if PHP_VERSION_ID < 70300
+#define GC_ADDREF(p)                    ++GC_REFCOUNT(p)
+#define GC_DELREF(p)                    --GC_REFCOUNT(p)
+#endif
+
+#define PHP_COLLECTIONS_COMPARE_NATURAL (1 << 0)
+#define PHP_COLLECTIONS_FOLD_CASE       (1 << 1)
 
 ZEND_BEGIN_MODULE_GLOBALS(collections)
     zend_fcall_info* fci;
@@ -39,9 +43,9 @@ ZEND_EXTERN_MODULE_GLOBALS(collections)
 #ifdef COMPILE_DL_COLLECTIONS
 ZEND_TSRMLS_CACHE_EXTERN()
 #endif
-#define COLLECTIONS_G(v) TSRMG(collections_globals_id, zend_collections_globals*, v)
+#define COLLECTIONS_G(v)                TSRMG(collections_globals_id, zend_collections_globals*, v)
 #else
-#define COLLECTIONS_G(v) (collections_globals.v)
+#define COLLECTIONS_G(v)                (collections_globals.v)
 #endif
 
 extern PHP_COLLECTIONS_API zend_class_entry* collections_collection_ce;
@@ -61,4 +65,4 @@ void collection_offset_unset(zval* object, zval* offset);
 extern const zend_function_entry collection_methods[];
 extern const zend_function_entry pair_methods[];
 
-#endif // !PHP_COLLECTIONS_FE_H
+#endif // !PHP_COLLECTIONS_H
