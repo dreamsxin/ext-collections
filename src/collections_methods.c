@@ -311,6 +311,12 @@ void collection_offset_set(zval* object, zval* offset, zval* value)
     {
         zend_hash_update(current, Z_STR_P(offset), value);
     }
+    else
+    {
+        ERR_BAD_KEY_TYPE();
+        return;
+    }    
+    Z_TRY_ADDREF_P(value);
 }
 
 zval* collection_offset_get(zval* object, zval* offset, int type, zval* retval)
