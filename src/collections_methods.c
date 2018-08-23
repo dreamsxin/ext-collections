@@ -140,7 +140,7 @@ static zend_always_inline void bucket_to_pair(zend_object* pair, Bucket* bucket)
     PAIR_UPDATE_SECOND(pair, &bucket->val);
 }
 
-static zend_always_inline int bucket_compare_numeric(const void* op1, const void* op2)
+static int bucket_compare_numeric(const void* op1, const void* op2)
 {
     Bucket* b1 = (Bucket*)op1;
     Bucket* b2 = (Bucket*)op2;
@@ -149,10 +149,12 @@ static zend_always_inline int bucket_compare_numeric(const void* op1, const void
 
 static int bucket_reverse_compare_numeric(const void* op1, const void* op2)
 {
-    return bucket_compare_numeric(op2, op1);
+    Bucket* b1 = (Bucket*)op1;
+    Bucket* b2 = (Bucket*)op2;
+    return numeric_compare_function(&b2->val, &b1->val);
 }
 
-static zend_always_inline int bucket_compare_string_ci(const void* op1, const void* op2)
+static int bucket_compare_string_ci(const void* op1, const void* op2)
 {
     Bucket* b1 = (Bucket*)op1;
     Bucket* b2 = (Bucket*)op2;
@@ -161,10 +163,12 @@ static zend_always_inline int bucket_compare_string_ci(const void* op1, const vo
 
 static int bucket_reverse_compare_string_ci(const void* op1, const void* op2)
 {
-    return bucket_compare_string_ci(op2, op1);
+    Bucket* b1 = (Bucket*)op1;
+    Bucket* b2 = (Bucket*)op2;
+    return string_case_compare_function(&b2->val, &b1->val);
 }
 
-static int zend_always_inline bucket_compare_string_cs(const void* op1, const void* op2)
+static int bucket_compare_string_cs(const void* op1, const void* op2)
 {
     Bucket* b1 = (Bucket*)op1;
     Bucket* b2 = (Bucket*)op2;
@@ -173,10 +177,12 @@ static int zend_always_inline bucket_compare_string_cs(const void* op1, const vo
 
 static int bucket_reverse_compare_string_cs(const void* op1, const void* op2)
 {
-    return bucket_compare_string_cs(op2, op1);
+    Bucket* b1 = (Bucket*)op1;
+    Bucket* b2 = (Bucket*)op2;
+    return string_compare_function(&b2->val, &b1->val);
 }
 
-static zend_always_inline int bucket_compare_natural_ci(const void* op1, const void* op2)
+static int bucket_compare_natural_ci(const void* op1, const void* op2)
 {
     Bucket* b1 = (Bucket*)op1;
     Bucket* b2 = (Bucket*)op2;
@@ -187,10 +193,14 @@ static zend_always_inline int bucket_compare_natural_ci(const void* op1, const v
 
 static int bucket_reverse_compare_natural_ci(const void* op1, const void* op2)
 {
-    return bucket_compare_natural_ci(op2, op1);
+    Bucket* b1 = (Bucket*)op1;
+    Bucket* b2 = (Bucket*)op2;
+    zval* v1 = &b1->val;
+    zval* v2 = &b2->val;
+    return strnatcmp_ex(Z_STRVAL_P(v2), Z_STRLEN_P(v2), Z_STRVAL_P(v1), Z_STRLEN_P(v1), 1);
 }
 
-static zend_always_inline int bucket_compare_natural_cs(const void* op1, const void* op2)
+static int bucket_compare_natural_cs(const void* op1, const void* op2)
 {
     Bucket* b1 = (Bucket*)op1;
     Bucket* b2 = (Bucket*)op2;
@@ -201,10 +211,14 @@ static zend_always_inline int bucket_compare_natural_cs(const void* op1, const v
 
 static int bucket_reverse_compare_natural_cs(const void* op1, const void* op2)
 {
-    return bucket_compare_natural_cs(op2, op1);
+    Bucket* b1 = (Bucket*)op1;
+    Bucket* b2 = (Bucket*)op2;
+    zval* v1 = &b1->val;
+    zval* v2 = &b2->val;
+    return strnatcmp_ex(Z_STRVAL_P(v2), Z_STRLEN_P(v2), Z_STRVAL_P(v1), Z_STRLEN_P(v1), 0);
 }
 
-static zend_always_inline int bucket_compare_regular(const void* op1, const void* op2)
+static int bucket_compare_regular(const void* op1, const void* op2)
 {
     Bucket* b1 = (Bucket*)op1;
     Bucket* b2 = (Bucket*)op2;
@@ -218,7 +232,14 @@ static zend_always_inline int bucket_compare_regular(const void* op1, const void
 
 static int bucket_reverse_compare_regular(const void* op1, const void* op2)
 {
-    return bucket_compare_regular(op2, op1);
+    Bucket* b1 = (Bucket*)op1;
+    Bucket* b2 = (Bucket*)op2;
+    zval result;
+    if (compare_function(&result, &b2->val, &b1->val) == FAILURE)
+    {
+        return 0;
+    }
+    return ZEND_NORMALIZE_BOOL(Z_LVAL(result));
 }
 
 static int bucket_compare_userland(const void* op1, const void* op2)
@@ -2192,7 +2213,19 @@ PHP_METHOD(Collection, slice)
 
 PHP_METHOD(Collection, sort)
 {
-
+    zend_long flags = 0;
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_LONG(flags)
+    ZEND_PARSE_PARAMETERS_END();
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    SEPARATE_CURRENT_COLLECTION(current);
+    compare_func_t cmp;
+    ZEND_HASH_FOREACH_VAL(current, zval* val)
+        cmp = compare_func_init(val, 0, flags);
+        break;
+    ZEND_HASH_FOREACH_END();
+    zend_hash_sort(current, cmp, 1);
 }
 
 PHP_METHOD(Collection, sortBy)
@@ -2207,7 +2240,19 @@ PHP_METHOD(Collection, sortByDescending)
 
 PHP_METHOD(Collection, sortDescending)
 {
-    
+    zend_long flags = 0;
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_LONG(flags)
+    ZEND_PARSE_PARAMETERS_END();
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    SEPARATE_CURRENT_COLLECTION(current);
+    compare_func_t cmp;
+    ZEND_HASH_FOREACH_VAL(current, zval* val)
+        cmp = compare_func_init(val, 1, flags);
+        break;
+    ZEND_HASH_FOREACH_END();
+    zend_hash_sort(current, cmp, 1);
 }
 
 PHP_METHOD(Collection, sortWith)
@@ -2245,7 +2290,20 @@ PHP_METHOD(Collection, sortWith)
 
 PHP_METHOD(Collection, sorted)
 {
-    
+    zend_long flags = 0;
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_LONG(flags)
+    ZEND_PARSE_PARAMETERS_END();
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    ARRAY_CLONE(sorted, current);
+    compare_func_t cmp;
+    ZEND_HASH_FOREACH_VAL(sorted, zval* val)
+        cmp = compare_func_init(val, 0, flags);
+        break;
+    ZEND_HASH_FOREACH_END();
+    zend_hash_sort(sorted, cmp, 1);
+    RETVAL_NEW_COLLECTION(sorted);
 }
 
 PHP_METHOD(Collection, sortedBy)
@@ -2260,7 +2318,20 @@ PHP_METHOD(Collection, sortedByDescending)
 
 PHP_METHOD(Collection, sortedDescending)
 {
-    
+    zend_long flags = 0;
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_LONG(flags)
+    ZEND_PARSE_PARAMETERS_END();
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    ARRAY_CLONE(sorted, current);
+    compare_func_t cmp;
+    ZEND_HASH_FOREACH_VAL(sorted, zval* val)
+        cmp = compare_func_init(val, 1, flags);
+        break;
+    ZEND_HASH_FOREACH_END();
+    zend_hash_sort(sorted, cmp, 1);
+    RETVAL_NEW_COLLECTION(sorted);
 }
 
 PHP_METHOD(Collection, sortedWith)
