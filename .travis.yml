@@ -1,5 +1,5 @@
 sudo: required
-dist: trusty
+dist: xenial
 group: edge
 
 language: php
@@ -14,4 +14,3 @@ script:
   - ./configure
   - make
   - make test
-
