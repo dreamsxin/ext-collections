@@ -11,6 +11,17 @@
 #include "php_collections.h"
 #include "php_collections_me.h"
 
+#if PHP_VERSION_ID < 70300
+#define GC_ADDREF(p)          ++GC_REFCOUNT(p)
+#define GC_DELREF(p)          --GC_REFCOUNT(p)
+#define HT_IS_PERSISTENT(ht)  (ht)->u.flags & HASH_FLAG_PERSISTENT
+#else
+#define HT_IS_PERSISTENT(ht)  GC_FLAGS(ht) & IS_ARRAY_PERSISTENT
+#endif
+
+#define FCI_G                 COLLECTIONS_G(fci)
+#define FCC_G                 COLLECTIONS_G(fcc)
+
 #define NEW_OBJ(name, ce, object_handlers)                                 \
     zend_object* (name) = (zend_object*)ecalloc(1, sizeof(zend_object) +   \
         zend_object_properties_size(ce));                                  \
@@ -45,7 +56,8 @@
         GC_DELREF(ht);                                                     \
         ht = Z_OBJ_P(obj)->properties = zend_array_dup(ht);                \
     }
-#define SEPARATE_CURRENT_COLLECTION(ht) SEPARATE_COLLECTION(ht, getThis())
+#define SEPARATE_CURRENT_COLLECTION(ht)                                    \
+    SEPARATE_COLLECTION(ht, getThis())
 
 #define INIT_FCI(fci, num_args)                                            \
     zval params[num_args], retval;                                         \
@@ -66,13 +78,20 @@
     }                                                                      \
     zend_call_function(&fci, &fcc)
 
-#define PHP_COLLECTIONS_ERROR(type, msg) php_error_docref(NULL, type, msg)
-#define ERR_BAD_ARGUMENT_TYPE() PHP_COLLECTIONS_ERROR(E_WARNING, "Bad argument type")
-#define ERR_BAD_KEY_TYPE() PHP_COLLECTIONS_ERROR(E_WARNING, "Key must be integer or string")
-#define ERR_BAD_CALLBACK_RETVAL() PHP_COLLECTIONS_ERROR(E_WARNING, "Bad callback return value")
-#define ERR_BAD_SIZE() PHP_COLLECTIONS_ERROR(E_WARNING, "Size must be non-negative")
-#define ERR_BAD_INDEX() PHP_COLLECTIONS_ERROR(E_WARNING, "Index must be non-negative")
-#define ERR_NOT_ARITHMETIC() PHP_COLLECTIONS_ERROR(E_WARNING, "Elements should be int or double")
+#define PHP_COLLECTIONS_ERROR(type, msg)                                   \
+    php_error_docref(NULL, type, msg)
+#define ERR_BAD_ARGUMENT_TYPE()                                            \
+    PHP_COLLECTIONS_ERROR(E_WARNING, "Bad argument type")
+#define ERR_BAD_KEY_TYPE()                                                 \
+    PHP_COLLECTIONS_ERROR(E_WARNING, "Key must be integer or string")
+#define ERR_BAD_CALLBACK_RETVAL()                                          \
+    PHP_COLLECTIONS_ERROR(E_WARNING, "Bad callback return value")
+#define ERR_BAD_SIZE()                                                     \
+    PHP_COLLECTIONS_ERROR(E_WARNING, "Size must be non-negative")
+#define ERR_BAD_INDEX()                                                    \
+    PHP_COLLECTIONS_ERROR(E_WARNING, "Index must be non-negative")
+#define ERR_NOT_ARITHMETIC()                                               \
+    PHP_COLLECTIONS_ERROR(E_WARNING, "Elements should be int or double")
 #define ERR_SILENCED()
 
 #define ELEMENTS_VALIDATE(elements, err, err_then)                         \
@@ -114,9 +133,6 @@
         RETVAL_NEW_COLLECTION(collection);                                 \
         return;                                                            \
     }
-
-#define FCI_G    COLLECTIONS_G(fci)
-#define FCC_G    COLLECTIONS_G(fcc)
 
 typedef int (*equal_check_func_t)(zval*, zval*);
 
@@ -183,37 +199,29 @@ static int bucket_reverse_compare_string_cs(const void* op1, const void* op2)
 
 static int bucket_compare_natural_ci(const void* op1, const void* op2)
 {
-    Bucket* b1 = (Bucket*)op1;
-    Bucket* b2 = (Bucket*)op2;
-    zval* v1 = &b1->val;
-    zval* v2 = &b2->val;
+    zval* v1 = &((Bucket*)op1)->val;
+    zval* v2 = &((Bucket*)op2)->val;
     return strnatcmp_ex(Z_STRVAL_P(v1), Z_STRLEN_P(v1), Z_STRVAL_P(v2), Z_STRLEN_P(v2), 1);
 }
 
 static int bucket_reverse_compare_natural_ci(const void* op1, const void* op2)
 {
-    Bucket* b1 = (Bucket*)op1;
-    Bucket* b2 = (Bucket*)op2;
-    zval* v1 = &b1->val;
-    zval* v2 = &b2->val;
+    zval* v1 = &((Bucket*)op1)->val;
+    zval* v2 = &((Bucket*)op2)->val;
     return strnatcmp_ex(Z_STRVAL_P(v2), Z_STRLEN_P(v2), Z_STRVAL_P(v1), Z_STRLEN_P(v1), 1);
 }
 
 static int bucket_compare_natural_cs(const void* op1, const void* op2)
 {
-    Bucket* b1 = (Bucket*)op1;
-    Bucket* b2 = (Bucket*)op2;
-    zval* v1 = &b1->val;
-    zval* v2 = &b2->val;
+    zval* v1 = &((Bucket*)op1)->val;
+    zval* v2 = &((Bucket*)op2)->val;
     return strnatcmp_ex(Z_STRVAL_P(v1), Z_STRLEN_P(v1), Z_STRVAL_P(v2), Z_STRLEN_P(v2), 0);
 }
 
 static int bucket_reverse_compare_natural_cs(const void* op1, const void* op2)
 {
-    Bucket* b1 = (Bucket*)op1;
-    Bucket* b2 = (Bucket*)op2;
-    zval* v1 = &b1->val;
-    zval* v2 = &b2->val;
+    zval* v1 = &((Bucket*)op1)->val;
+    zval* v2 = &((Bucket*)op2)->val;
     return strnatcmp_ex(Z_STRVAL_P(v2), Z_STRLEN_P(v2), Z_STRVAL_P(v1), Z_STRLEN_P(v1), 0);
 }
 
