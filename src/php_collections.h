@@ -27,6 +27,9 @@ extern zend_module_entry collections_module_entry;
 #if PHP_VERSION_ID < 70300
 #define GC_ADDREF(p)                    ++GC_REFCOUNT(p)
 #define GC_DELREF(p)                    --GC_REFCOUNT(p)
+#define HT_IS_PERSISTENT(ht)            (ht)->u.flags & HASH_FLAG_PERSISTENT
+#else
+#define HT_IS_PERSISTENT(ht)            GC_FLAGS(ht) & IS_ARRAY_PERSISTENT
 #endif
 
 #define PHP_COLLECTIONS_COMPARE_NATURAL (1 << 0)

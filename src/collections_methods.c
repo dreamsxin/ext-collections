@@ -342,12 +342,12 @@ static zend_always_inline void zend_hash_sort_by(zend_array* ht)
     {
 		void *new_data, *old_data = HT_GET_DATA_ADDR(ht);
 		Bucket *old_buckets = ht->arData;
-		new_data = pemalloc(HT_SIZE_EX(ht->nTableSize, HT_MIN_MASK), (ht->u.flags & HASH_FLAG_PERSISTENT));
+		new_data = pemalloc(HT_SIZE_EX(ht->nTableSize, HT_MIN_MASK), HT_IS_PERSISTENT(ht));
 		ht->u.flags |= HASH_FLAG_PACKED | HASH_FLAG_STATIC_KEYS;
 		ht->nTableMask = HT_MIN_MASK;
 		HT_SET_DATA_ADDR(ht, new_data);
 		memcpy(ht->arData, old_buckets, sizeof(Bucket) * ht->nNumUsed);
-		pefree(old_data, ht->u.flags & HASH_FLAG_PERSISTENT & HASH_FLAG_PERSISTENT);
+		pefree(old_data, HT_IS_PERSISTENT(ht));
 		HT_HASH_RESET_PACKED(ht);
     }
 }
