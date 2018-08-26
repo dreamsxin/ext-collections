@@ -316,47 +316,47 @@ static zend_always_inline void zend_hash_sort_by(zend_array* ht)
     uint32_t i;
     if (HT_IS_WITHOUT_HOLES(ht))
     {
-		i = ht->nNumUsed;
-	}
+        i = ht->nNumUsed;
+    }
     else
     {
         uint32_t j;
-		for (j = 0, i = 0; j < ht->nNumUsed; j++)
+        for (j = 0, i = 0; j < ht->nNumUsed; j++)
         {
-			Bucket *p = ht->arData + j;
-			if (UNEXPECTED(Z_TYPE(p->val) == IS_UNDEF))
+            Bucket *p = ht->arData + j;
+            if (UNEXPECTED(Z_TYPE(p->val) == IS_UNDEF))
             {
                 continue;
             }
-			if (i != j)
+            if (i != j)
             {
-				ht->arData[i] = *p;
-			}
-			i++;
-		}
-	}
+                ht->arData[i] = *p;
+            }
+            i++;
+        }
+    }
     uint32_t num_elements = zend_hash_num_elements(ht);
-	if (num_elements > 1)
+    if (num_elements > 1)
     {
-		zend_sort(ht->arData, i, sizeof(Bucket), bucket_compare_by,
+        zend_sort(ht->arData, i, sizeof(Bucket), bucket_compare_by,
             (swap_func_t)zend_hash_bucket_packed_swap);
         ht->nNumUsed = i;
-	}
+    }
     HashPosition idx = 0;
     ZEND_HASH_FOREACH_BUCKET(ht, Bucket* bucket)
         bucket->h = idx++;
     ZEND_HASH_FOREACH_END();
     if (!HT_IS_PACKED(ht))
     {
-		void *new_data, *old_data = HT_GET_DATA_ADDR(ht);
-		Bucket *old_buckets = ht->arData;
-		new_data = pemalloc(HT_SIZE_EX(ht->nTableSize, HT_MIN_MASK), HT_IS_PERSISTENT(ht));
-		ht->u.flags |= HASH_FLAG_PACKED | HASH_FLAG_STATIC_KEYS;
-		ht->nTableMask = HT_MIN_MASK;
-		HT_SET_DATA_ADDR(ht, new_data);
-		memcpy(ht->arData, old_buckets, sizeof(Bucket) * ht->nNumUsed);
-		pefree(old_data, HT_IS_PERSISTENT(ht));
-		HT_HASH_RESET_PACKED(ht);
+        void *new_data, *old_data = HT_GET_DATA_ADDR(ht);
+        Bucket *old_buckets = ht->arData;
+        new_data = pemalloc(HT_SIZE_EX(ht->nTableSize, HT_MIN_MASK), HT_IS_PERSISTENT(ht));
+        ht->u.flags |= HASH_FLAG_PACKED | HASH_FLAG_STATIC_KEYS;
+        ht->nTableMask = HT_MIN_MASK;
+        HT_SET_DATA_ADDR(ht, new_data);
+        memcpy(ht->arData, old_buckets, sizeof(Bucket) * ht->nNumUsed);
+        pefree(old_data, HT_IS_PERSISTENT(ht));
+        HT_HASH_RESET_PACKED(ht);
     }
 }
 
