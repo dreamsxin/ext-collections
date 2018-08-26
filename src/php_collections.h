@@ -35,6 +35,8 @@ extern zend_module_entry collections_module_entry;
 ZEND_BEGIN_MODULE_GLOBALS(collections)
     zend_fcall_info* fci;
     zend_fcall_info_cache* fcc;
+    zval* ref;
+    compare_func_t cmp;
 ZEND_END_MODULE_GLOBALS(collections)
 
 ZEND_EXTERN_MODULE_GLOBALS(collections)
