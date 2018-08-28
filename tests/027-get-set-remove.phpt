@@ -8,14 +8,19 @@ $collection->set('a', 'foo');
 $collection->set('e', 'bar');
 $array['a'] = 'foo';
 $array['e'] = 'bar';
-if ($collection->toArray() != $array)
+if ($collection->toArray() != $array) {
     echo 'Collection::set() failed.', PHP_EOL;
+}
 if ($collection->get('a') != $array['a'] ||
-    $collection->get('f', function ($key) { return $key; }) != 'f')
+    $collection->get('f', function ($key) { return $key; }) != 'f'
+) {
     echo 'Collection::get() failed.', PHP_EOL;
-if (!$collection->remove('a') || !is_null($collection->get('a')))
+}
+if (!$collection->remove('a') || !is_null($collection->get('a'))) {
     echo 'Collection::remove() failed.', PHP_EOL;
-if ($collection->remove('c', 'e') || $collection->get('c') != 'd')
+}
+if ($collection->remove('c', 'e') || $collection->get('c') != 'd') {
     echo 'Collection::remove() failed.', PHP_EOL;
+}
 ?>
 --EXPECT--

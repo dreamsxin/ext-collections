@@ -361,7 +361,7 @@ static zend_always_inline void zend_hash_distinct(zend_array* ht, Bucket* ref, c
     {
         ref[num_elements].h = UINT32_MAX;
         ZVAL_UNDEF(&ref[num_elements].val);
-        uint32_t min_offset = UINT32_MAX;
+        uint32_t min_offset = ref[0].h;
         for (idx = 1; idx <= num_elements; ++idx)
         {
             Bucket* bucket = &ref[idx];

@@ -18,8 +18,9 @@ $usort_by_b = function ($v1, $v2) {
 $sorted_by_b = $collection->sortedWith($by_b);
 $array1 = $array;
 usort($array1, $usort_by_b);
-if ($sorted_by_b->toArray() != $array1)
+if ($sorted_by_b->toArray() != $array1) {
     echo 'Collection::sortedWith() failed.', PHP_EOL;
+}
 $by_c = function ($p1, $p2) {
     return $p1->second['c'] - $p2->second['c'];
 };
@@ -29,7 +30,8 @@ $usort_by_c = function ($v1, $v2) {
 $collection->sortWith($by_c);
 $array2 = $array;
 usort($array2, $usort_by_c);
-if ($collection->toArray() != $array2)
+if ($collection->toArray() != $array2) {
     echo 'Collection::sortedWith() failed.', PHP_EOL;
+}
 ?>
 --EXPECT--

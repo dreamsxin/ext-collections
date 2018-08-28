@@ -7,14 +7,16 @@ $collection = Collection::init($array)
     ->associateBy(function ($value, $key) {
         return strlen($key) - 1;
     });
-if ($collection->toArray() != array_values($array))
+if ($collection->toArray() != array_values($array)) {
     echo 'Collection::associateBy() failed.', PHP_EOL;
-$array1 = ['foo' => 'bar'];
-$collection1 = Collection::init($array1);
-$array2 = $collection->associateByTo($collection1, function ($value, $key) {
+}
+$array = ['foo' => 'bar'];
+$collection = Collection::init($array);
+$array1 = $collection->associateByTo($collection, function ($value, $key) {
     return $key;
 })->toArray();
-if ($array2 != $array1 + $collection->toArray() || $collection1->toArray() != $array2)
+if ($array1 != $array + $collection->toArray() || $collection->toArray() != $array1) {
     echo 'Collection::associateTo() failed.', PHP_EOL;
+}
 ?>
 --EXPECT--

@@ -13,7 +13,8 @@ $value1 = $collection->single(function ($value) {
 $value2 = $collection->single(function ($value, $key) {
     return $key > 5;
 });
-if (isset($value) || $value1 != 'cd' || isset($value2))
+if (isset($value) || $value1 != 'cd' || isset($value2)) {
     echo 'Collection::single() failed.', PHP_EOL;
+}
 ?>
 --EXPECT--

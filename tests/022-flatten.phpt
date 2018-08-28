@@ -4,7 +4,8 @@ Test Collection::flatten().
 <?php
 $array = [['a', 'foo' => 'b'], ['c', 'd', ['e']], 'bar' => 'f'];
 $collection = Collection::init($array)->flatten();
-if ($collection->toArray() != ['a', 'foo' => 'b', 'c', 'd', ['e'], 'bar' => 'f'])
+if ($collection->toArray() != ['a', 'foo' => 'b', 'c', 'd', ['e'], 'bar' => 'f']) {
     echo 'Collection::flatten() failed.', PHP_EOL;
+}
 ?>
 --EXPECT--
