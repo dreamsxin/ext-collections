@@ -3,8 +3,8 @@ Test Collection::distinct().
 --FILE--
 <?php
 $array = [];
-for ($i = 0; $i < 400; ++$i) {
-    $array[] = random_int(1, 400);
+for ($i = 0; $i < 100; ++$i) {
+    $array[] = random_int(1, 10);
 }
 $collection = Collection::init($array)->distinct();
 if ($collection->toArray() != array_values(array_unique($array))) {
@@ -12,8 +12,8 @@ if ($collection->toArray() != array_values(array_unique($array))) {
 }
 
 $array = [];
-for ($i = 0; $i < 100; ++$i) {
-    $array[random_bytes(4)] = random_int(1, 10);
+for ($i = 0; $i < 300; ++$i) {
+    $array[random_bytes(4)] = random_bytes(1);
 }
 $collection = Collection::init($array)->distinct();
 if (array_diff($collection->toArray(), array_unique($array))) {

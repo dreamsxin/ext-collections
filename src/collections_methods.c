@@ -255,6 +255,15 @@ static int bucket_compare_by(const void* op1, const void* op2)
     return cmp(&ref[b1->h], &ref[b2->h]);
 }
 
+static int bucket_compare_with_idx(const void* op1, const void* op2)
+{
+    zend_long h1 = ((Bucket*)op1)->h;
+    zend_long h2 = ((Bucket*)op2)->h;
+    compare_func_t cmp = COLLECTIONS_G(cmp);
+    int result = cmp(op1, op2);
+    return result ? result : ZEND_NORMALIZE_BOOL(h1 - h2);
+}
+
 static int bucket_compare_userland(const void* op1, const void* op2)
 {
     Bucket* b1 = (Bucket*)op1;
@@ -349,47 +358,30 @@ static zend_always_inline void zend_hash_sort_by(zend_array* ht)
     }
 }
 
-static zend_always_inline void zend_hash_distinct(zend_array* ht, Bucket* ref, compare_func_t cmp,
+static zend_always_inline void array_distinct(zend_array* ht, Bucket* ref, compare_func_t cmp,
     equal_check_func_t eql)
 {
     uint32_t num_elements = zend_hash_num_elements(ht);
     zend_bool packed = HT_IS_PACKED(ht);
     uint32_t idx = 0;
-    zend_sort(ref, num_elements, sizeof(Bucket), cmp, (swap_func_t)zend_hash_bucket_packed_swap);
+    zend_sort(ref, num_elements, sizeof(Bucket), packed ? bucket_compare_with_idx : cmp,
+        (swap_func_t)zend_hash_bucket_packed_swap);
     Bucket* first = &ref[0];
     if (packed)
     {
-        ref[num_elements].h = UINT32_MAX;
-        ZVAL_UNDEF(&ref[num_elements].val);
-        uint32_t min_offset = ref[0].h;
-        for (idx = 1; idx <= num_elements; ++idx)
+        for (idx = 1; idx < num_elements; ++idx)
         {
             Bucket* bucket = &ref[idx];
             if (eql(&bucket->val, &first->val))
             {
-                if (bucket->h < min_offset)
-                {
-                    min_offset = bucket->h;
-                }
-            }
-            else
-            {
-                if (bucket - 1 - first > 0)
-                {
-                    Bucket* tmp;
-                    for (tmp = first; tmp < bucket; ++tmp)
-                    {
-                        if (tmp->h != min_offset)
-                        {
-                            Bucket* duplicate = ht->arData + tmp->h;
+                Bucket* duplicate = ht->arData + bucket->h;
                             zval_ptr_dtor(&duplicate->val);
                             ZVAL_UNDEF(&duplicate->val);
                             --ht->nNumOfElements;
                         }
-                    }
-                }
+            else
+            {
                 first = bucket;
-                min_offset = bucket->h;
             }
         }
         // Renumber the integer keys and return a new Collection with packed zend_array.
@@ -920,7 +912,8 @@ PHP_METHOD(Collection, distinct)
         dest->h = bucket - distinct->arData;
         memcpy(&dest->val, &bucket->val, sizeof(zval));
     ZEND_HASH_FOREACH_END();
-    zend_hash_distinct(distinct, ref, cmp, eql);
+    COLLECTIONS_G(cmp) = cmp;
+    array_distinct(distinct, ref, cmp, eql);
     free(ref);
     RETVAL_NEW_COLLECTION(distinct);
 }
