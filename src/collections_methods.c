@@ -375,10 +375,10 @@ static zend_always_inline void array_distinct(zend_array* ht, Bucket* ref, compa
             if (eql(&bucket->val, &first->val))
             {
                 Bucket* duplicate = ht->arData + bucket->h;
-                            zval_ptr_dtor(&duplicate->val);
-                            ZVAL_UNDEF(&duplicate->val);
-                            --ht->nNumOfElements;
-                        }
+                zval_ptr_dtor(&duplicate->val);
+                ZVAL_UNDEF(&duplicate->val);
+                --ht->nNumOfElements;
+            }
             else
             {
                 first = bucket;
