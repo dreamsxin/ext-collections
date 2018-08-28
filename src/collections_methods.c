@@ -14,9 +14,6 @@
 #if PHP_VERSION_ID < 70300
 #define GC_ADDREF(p)          ++GC_REFCOUNT(p)
 #define GC_DELREF(p)          --GC_REFCOUNT(p)
-#define HT_IS_PERSISTENT(ht)  (ht)->u.flags & HASH_FLAG_PERSISTENT
-#else
-#define HT_IS_PERSISTENT(ht)  GC_FLAGS(ht) & IS_ARRAY_PERSISTENT
 #endif
 
 #define FCI_G                 COLLECTIONS_G(fci)
@@ -342,21 +339,95 @@ static zend_always_inline void zend_hash_sort_by(zend_array* ht)
             (swap_func_t)zend_hash_bucket_packed_swap);
         ht->nNumUsed = i;
     }
-    HashPosition idx = 0;
+    uint32_t idx = 0;
     ZEND_HASH_FOREACH_BUCKET(ht, Bucket* bucket)
         bucket->h = idx++;
     ZEND_HASH_FOREACH_END();
     if (!HT_IS_PACKED(ht))
     {
-        void *new_data, *old_data = HT_GET_DATA_ADDR(ht);
-        Bucket *old_buckets = ht->arData;
-        new_data = pemalloc(HT_SIZE_EX(ht->nTableSize, HT_MIN_MASK), HT_IS_PERSISTENT(ht));
-        ht->u.flags |= HASH_FLAG_PACKED | HASH_FLAG_STATIC_KEYS;
-        ht->nTableMask = HT_MIN_MASK;
-        HT_SET_DATA_ADDR(ht, new_data);
-        memcpy(ht->arData, old_buckets, sizeof(Bucket) * ht->nNumUsed);
-        pefree(old_data, HT_IS_PERSISTENT(ht));
-        HT_HASH_RESET_PACKED(ht);
+        zend_hash_to_packed(ht);
+    }
+}
+
+static zend_always_inline void zend_hash_distinct(zend_array* ht, Bucket* ref, compare_func_t cmp,
+    equal_check_func_t eql)
+{
+    uint32_t num_elements = zend_hash_num_elements(ht);
+    zend_bool packed = HT_IS_PACKED(ht);
+    uint32_t idx = 0;
+    zend_sort(ref, num_elements, sizeof(Bucket), cmp, (swap_func_t)zend_hash_bucket_packed_swap);
+    Bucket* first = &ref[0];
+    if (packed)
+    {
+        ref[num_elements].h = UINT32_MAX;
+        ZVAL_UNDEF(&ref[num_elements].val);
+        uint32_t min_offset = UINT32_MAX;
+        for (idx = 1; idx <= num_elements; ++idx)
+        {
+            Bucket* bucket = &ref[idx];
+            if (eql(&bucket->val, &first->val))
+            {
+                if (bucket->h < min_offset)
+                {
+                    min_offset = bucket->h;
+                }
+            }
+            else
+            {
+                if (bucket - 1 - first > 0)
+                {
+                    Bucket* tmp;
+                    for (tmp = first; tmp < bucket; ++tmp)
+                    {
+                        if (tmp->h != min_offset)
+                        {
+                            Bucket* duplicate = ht->arData + tmp->h;
+                            zval_ptr_dtor(&duplicate->val);
+                            ZVAL_UNDEF(&duplicate->val);
+                            --ht->nNumOfElements;
+                        }
+                    }
+                }
+                first = bucket;
+                min_offset = bucket->h;
+            }
+        }
+        // Renumber the integer keys and return a new Collection with packed zend_array.
+        Bucket* bucket = ht->arData;
+        Bucket* last = NULL;
+        for (idx = 0; bucket < ht->arData + ht->nNumUsed; ++bucket, ++idx)
+        {
+            bucket->h = idx;
+            if (Z_ISUNDEF(bucket->val))
+            {
+                if (UNEXPECTED(last == NULL))
+                {
+                    last = bucket;
+                }
+            }
+            else if (EXPECTED(last))
+            {
+                ZVAL_COPY_VALUE(&(last++)->val, &bucket->val);
+                ZVAL_UNDEF(&bucket->val);
+            }
+        }
+        ht->nNumUsed = ht->nNumOfElements;
+        zend_hash_to_packed(ht);
+    }
+    else
+    {
+        for (idx = 1; idx < num_elements; ++idx)
+        {
+            Bucket* bucket = &ref[idx];
+            if (eql(&bucket->val, &first->val))
+            {
+                zend_hash_del_bucket(ht, ht->arData + bucket->h);
+            }
+            else
+            {
+                first = bucket;
+            }
+        }
     }
 }
 
@@ -832,7 +903,26 @@ PHP_METHOD(Collection, count)
 
 PHP_METHOD(Collection, distinct)
 {
-    
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    compare_func_t cmp = NULL;
+    equal_check_func_t eql = NULL;
+    Bucket* ref = (Bucket*)malloc((zend_hash_num_elements(current) + 1) * sizeof(Bucket));
+    ARRAY_CLONE(distinct, current);
+    uint32_t idx = 0;
+    ZEND_HASH_FOREACH_BUCKET(distinct, Bucket* bucket)
+        if (UNEXPECTED(cmp == NULL))
+        {
+            cmp = compare_func_init(&bucket->val, 0, 0);
+            eql = equal_check_func_init(&bucket->val);
+        }
+        Bucket* dest = &ref[idx++];
+        dest->key = NULL;
+        dest->h = bucket - distinct->arData;
+        memcpy(&dest->val, &bucket->val, sizeof(zval));
+    ZEND_HASH_FOREACH_END();
+    zend_hash_distinct(distinct, ref, cmp, eql);
+    free(ref);
+    RETVAL_NEW_COLLECTION(distinct);
 }
 
 PHP_METHOD(Collection, distinctBy)
@@ -1129,7 +1219,7 @@ PHP_METHOD(Collection, first)
     }
     if (EX_NUM_ARGS() == 0)
     {
-        HashPosition pos = 0;
+        uint32_t pos = 0;
         while (pos < current->nNumUsed && Z_ISUNDEF(current->arData[pos].val))
         {
             ++pos;
@@ -1506,7 +1596,7 @@ PHP_METHOD(Collection, last)
     }
     if (EX_NUM_ARGS() == 0)
     {
-        HashPosition pos = current->nNumUsed;
+        uint32_t pos = current->nNumUsed;
         while (pos <= current->nNumUsed && Z_ISUNDEF(current->arData[pos].val))
         {
             --pos;
@@ -2309,7 +2399,7 @@ PHP_METHOD(Collection, sortBy)
     zval* sort_by = (zval*)malloc(num_elements * sizeof(zval));
     INIT_FCI(&fci, 2);
     compare_func_t cmp = NULL;
-    HashPosition idx = 0;
+    uint32_t idx = 0;
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (UNEXPECTED(cmp == NULL))
@@ -2350,7 +2440,7 @@ PHP_METHOD(Collection, sortByDescending)
     zval* sort_by = (zval*)malloc(num_elements * sizeof(zval));
     INIT_FCI(&fci, 2);
     compare_func_t cmp = NULL;
-    HashPosition idx = 0;
+    uint32_t idx = 0;
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (UNEXPECTED(cmp == NULL))
@@ -2459,7 +2549,7 @@ PHP_METHOD(Collection, sortedBy)
     zval* sort_by = (zval*)malloc(num_elements * sizeof(zval));
     INIT_FCI(&fci, 2);
     compare_func_t cmp = NULL;
-    HashPosition idx = 0;
+    uint32_t idx = 0;
     ZEND_HASH_FOREACH_BUCKET(sorted, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (UNEXPECTED(cmp == NULL))
@@ -2501,7 +2591,7 @@ PHP_METHOD(Collection, sortedByDescending)
     zval* sort_by = (zval*)malloc(num_elements * sizeof(zval));
     INIT_FCI(&fci, 2);
     compare_func_t cmp = NULL;
-    HashPosition idx = 0;
+    uint32_t idx = 0;
     ZEND_HASH_FOREACH_BUCKET(sorted, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (UNEXPECTED(cmp == NULL))

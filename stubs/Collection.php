@@ -142,6 +142,9 @@ class Collection implements ArrayAccess, Countable
 
     /**
      * Returns a collection containing only distinct elements from the given collection.
+     * 
+     * If the collection is an ordinary array, the element order in the returned collection is
+     * guaranteed to be preserved, and integer index will be reordered.
      *
      * @return Collection
      */
@@ -149,9 +152,12 @@ class Collection implements ArrayAccess, Countable
 
     /**
      * Returns a collection containing only elements from the given collection having distinct
-     * keys returned by the given selector function.
+     * values returned by the given selector function.
+     * 
+     * If the collection is an ordinary array, the element order in the returned collection is
+     * guaranteed to be preserved, and integer index will be reordered.
      *
-     * @param callable $selector ($value, $key) -> $key
+     * @param callable $selector ($value, $key) -> $new_value
      * @return Collection
      */
     function distinctBy($selector) {}
