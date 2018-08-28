@@ -898,7 +898,7 @@ PHP_METHOD(Collection, distinct)
     zend_array* current = COLLECTION_FETCH_CURRENT();
     compare_func_t cmp = NULL;
     equal_check_func_t eql = NULL;
-    Bucket* ref = (Bucket*)malloc((zend_hash_num_elements(current) + 1) * sizeof(Bucket));
+    Bucket* ref = (Bucket*)malloc(zend_hash_num_elements(current) * sizeof(Bucket));
     ARRAY_CLONE(distinct, current);
     uint32_t idx = 0;
     ZEND_HASH_FOREACH_BUCKET(distinct, Bucket* bucket)
