@@ -16,7 +16,7 @@ foreach ($distinct_idx as $idx) {
     $array1[] = $array[$idx];
 }
 if ($distinct != $array1) {
-    echo 'Collection::distinct() failed.', PHP_EOL;
+    echo 'Collection::distinctBy() failed.', PHP_EOL;
 }
 ?>
 --EXPECT--
