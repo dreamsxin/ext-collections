@@ -314,27 +314,29 @@ class Collection implements ArrayAccess, Countable
     function get($key, $default) {}
 
     /**
-     * Groups values returned by the value_transform function applied to each element of the
-     * original collection by the key returned by the given key_selector function applied to the element
+     * Groups values by the key returned by the given transform function applied to the element
      * and returns a collection where each group key is associated with a list of corresponding values.
+     * 
+     * Key should be either string or integer. If the transform function returns a Pair, the
+     * original value will be mapped to the new value.
      *
-     * @param callable $key_selector ($value, $key) -> $new_key
-     * @param callable $value_transform[optional] ($value) -> $new_value
+     * @param callable $transform ($value, $key) -> $new_key | Pair($new_key, $new_value)
      * @return Collection
      */
-    function groupBy($key_selector, $value_transform) {}
+    function groupBy($transform) {}
 
     /**
-     * Groups values returned by the value_transform function applied to each element of the original
-     * collection by the key returned by the given key_selector function applied to the element and
+     * Groups values by the key returned by the given transform function applied to the element and
      * puts to the destination collection each group key associated with a list of corresponding values.
+     * 
+     * Key should be either string or integer. If the transform function returns a Pair, the
+     * original value will be mapped to the new value.
      *
      * @param Collection $destination
-     * @param callable $key_selector ($value, $key) -> $new_key
-     * @param callable $value_transform[optional] ($value) -> $new_value
+     * @param callable $transform ($value, $key) -> $new_key | Pair($new_key, $new_value)
      * @return Collection
      */
-    function groupByTo($destination, $key_selector, $value_transform) {}
+    function groupByTo($destination, $transform) {}
 
     /**
      * Returns first key of element, or null if the collection does not contain element.
