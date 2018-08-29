@@ -920,7 +920,39 @@ PHP_METHOD(Collection, distinct)
 
 PHP_METHOD(Collection, distinctBy)
 {
-    
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    compare_func_t cmp = NULL;
+    equal_check_func_t eql = NULL;
+    uint32_t num_elements = zend_hash_num_elements(current);
+    Bucket* ref = (Bucket*)malloc(num_elements * sizeof(Bucket));
+    ARRAY_CLONE(distinct, current);
+    uint32_t idx = 0;
+    INIT_FCI(&fci, 2);
+    ZEND_HASH_FOREACH_BUCKET(distinct, Bucket* bucket)
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
+        if (UNEXPECTED(cmp == NULL))
+        {
+            cmp = compare_func_init(&retval, 0, 0);
+            eql = equal_check_func_init(&retval);
+        }
+        Bucket* dest = &ref[idx++];
+        dest->key = NULL;
+        dest->h = bucket - distinct->arData;
+        memcpy(&dest->val, &retval, sizeof(zval));
+    ZEND_HASH_FOREACH_END();
+    COLLECTIONS_G(cmp) = cmp;
+    array_distinct(distinct, ref, cmp, eql);
+    for (idx = 0; idx < num_elements; ++idx)
+    {
+        zval_ptr_dtor(&ref[idx].val);
+    }
+    free(ref);
+    RETVAL_NEW_COLLECTION(distinct);
 }
 
 PHP_METHOD(Collection, drop)
