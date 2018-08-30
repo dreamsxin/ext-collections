@@ -450,7 +450,8 @@ int collection_offset_exists(zval* object, zval* offset, int check_empty)
     zend_array* current = COLLECTION_FETCH(object);
     if (check_empty)
     {
-        return zend_hash_num_elements(current) == 0;
+        zval result;
+        return zend_is_true(collection_offset_get(object, offset, 0, &result));
     }
     if (Z_TYPE_P(offset) == IS_LONG)
     {

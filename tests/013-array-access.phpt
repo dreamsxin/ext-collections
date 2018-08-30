@@ -2,12 +2,14 @@
 Test implementation of interface ArrayAccess.
 --FILE--
 <?php
-$array = ['a' => 'b', 'c' => 'd', 'e' => ['f' => 'g']];
+$array = ['a' => 'b', 'c' => 'd', 'e' => ['f' => 'g'], 'i' => false];
 $collection = Collection::init($array);
 $collection['a'] = 'foo'.strval(123);
 $collection['h'] = 'bar';
 unset($collection['c']);
-if (empty($collection) || isset($collection['t']) || !isset($collection['e'])) {
+if (empty($collection['e']) || !empty($collection['i']) ||
+    isset($collection['t']) || !isset($collection['e'])
+) {
     echo 'Test for handlers.has_dimension failed.', PHP_EOL;
 }
 if ($collection['e']['f'] != 'g') {
