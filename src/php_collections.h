@@ -48,9 +48,6 @@ ZEND_TSRMLS_CACHE_EXTERN()
 extern PHP_COLLECTIONS_API zend_class_entry* collections_collection_ce;
 extern PHP_COLLECTIONS_API zend_class_entry* collections_pair_ce;
 
-extern zend_string* collections_pair_first;
-extern zend_string* collections_pair_second;
-
 extern zend_object_handlers collection_handlers;
 
 int count_collection(zval* obj, zend_long* count);
@@ -58,6 +55,10 @@ int collection_offset_exists(zval* object, zval* offset, int check_empty);
 void collection_offset_set(zval* object, zval* offset, zval* value);
 zval* collection_offset_get(zval* object, zval* offset, int type, zval* retval);
 void collection_offset_unset(zval* object, zval* offset);
+int collection_property_exists(zval* object, zval* member, int has_set_exists, void**);
+void collection_property_set(zval* object, zval* member, zval* value, void**);
+zval* collection_property_get(zval* object, zval* member, int type, void**, zval* retval);
+void collection_property_unset(zval* object, zval* member, void**);
 
 extern const zend_function_entry collection_methods[];
 extern const zend_function_entry pair_methods[];

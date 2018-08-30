@@ -12,40 +12,22 @@
 #include "php_collections_me.h"
 
 #if PHP_VERSION_ID < 70300
-#define GC_ADDREF(p)          ++GC_REFCOUNT(p)
-#define GC_DELREF(p)          --GC_REFCOUNT(p)
+#define GC_ADDREF(p)                ++GC_REFCOUNT(p)
+#define GC_DELREF(p)                --GC_REFCOUNT(p)
 #endif
 
-#define FCI_G                 COLLECTIONS_G(fci)
-#define FCC_G                 COLLECTIONS_G(fcc)
+#define FCI_G                       COLLECTIONS_G(fci)
+#define FCC_G                       COLLECTIONS_G(fcc)
 
-#define NEW_OBJ(name, ce, object_handlers)                                 \
-    zend_object* (name) = (zend_object*)ecalloc(1, sizeof(zend_object) +   \
-        zend_object_properties_size(ce));                                  \
-    zend_object_std_init(name, ce);                                        \
-    (name)->handlers = object_handlers
-#define NEW_COLLECTION_OBJ(name)                                           \
-    NEW_OBJ(name, collections_collection_ce, &collection_handlers)
-#define NEW_PAIR_OBJ(name)                                                 \
-    NEW_OBJ(name, collections_pair_ce, &std_object_handlers);              \
-    name->properties = (zend_array*)emalloc(sizeof(zend_array));           \
-    zend_hash_init(name->properties, 2, NULL, ZVAL_PTR_DTOR, 0)
+#define COLLECTION_FETCH(val)       (Z_OBJ_P(val)->properties)
+#define COLLECTION_FETCH_CURRENT()  COLLECTION_FETCH(getThis())
+#define PAIR_FETCH_FIRST(obj)       OBJ_PROP_NUM(obj, 0)
+#define PAIR_FETCH_SECOND(obj)      OBJ_PROP_NUM(obj, 1)
 
 #define IS_COLLECTION_P(zval)                                              \
     Z_TYPE_P(zval) == IS_OBJECT && Z_OBJCE_P(zval) == collections_collection_ce
 #define IS_PAIR(zval)                                                      \
     EXPECTED(Z_TYPE(zval) == IS_OBJECT) && EXPECTED(Z_OBJCE(zval) == collections_pair_ce)
-
-#define OBJ_PROPERTY_UPDATE(obj, property_name, value)                     \
-    zend_hash_update((obj)->properties, property_name, value)
-#define OBJ_PROPERTY_FETCH(obj, property_name)                             \
-    zend_hash_find((obj)->properties, property_name)
-#define PAIR_UPDATE_FIRST(obj, value) OBJ_PROPERTY_UPDATE(obj, collections_pair_first, value)
-#define PAIR_UPDATE_SECOND(obj, value) OBJ_PROPERTY_UPDATE(obj, collections_pair_second, value)
-#define PAIR_FETCH_FIRST(obj) OBJ_PROPERTY_FETCH(obj, collections_pair_first)
-#define PAIR_FETCH_SECOND(obj)  OBJ_PROPERTY_FETCH(obj, collections_pair_second)
-#define COLLECTION_FETCH(obj) Z_OBJ_P(obj)->properties
-#define COLLECTION_FETCH_CURRENT() COLLECTION_FETCH(getThis())
 
 #define SEPARATE_COLLECTION(ht, obj)                                       \
     if (GC_REFCOUNT(ht) > 1)                                               \
@@ -118,7 +100,7 @@
 #define RETVAL_NEW_COLLECTION(collection)                                  \
     do                                                                     \
     {                                                                      \
-        NEW_COLLECTION_OBJ(obj);                                           \
+        zend_object* obj = create_collection_obj();                        \
         if (GC_REFCOUNT(collection) > 1)                                   \
             GC_ADDREF(collection);                                         \
         obj->properties = collection;                                      \
@@ -136,6 +118,39 @@ typedef int (*equal_check_func_t)(zval*, zval*);
 /// Unused global variable.
 zval rv;
 
+static zend_always_inline void pair_update_first(zend_object* obj, zval* value)
+{
+    zval_ptr_dtor(PAIR_FETCH_FIRST(obj));
+    ZVAL_COPY_VALUE(PAIR_FETCH_FIRST(obj), value);
+}
+
+static zend_always_inline void pair_update_second(zend_object* obj, zval* value)
+{
+    zval_ptr_dtor(PAIR_FETCH_SECOND(obj));
+    ZVAL_COPY_VALUE(PAIR_FETCH_SECOND(obj), value);
+}
+
+static zend_always_inline zend_object* create_object(zend_class_entry* ce,
+    zend_object_handlers* handlers)
+{
+    zend_object* obj = (zend_object*)ecalloc(1, sizeof(zend_object) +
+        zend_object_properties_size(ce));
+    zend_object_std_init(obj, ce);
+    object_properties_init(obj, ce);
+    obj->handlers = handlers;
+    return obj;
+}
+
+static zend_always_inline zend_object* create_collection_obj()
+{
+    return create_object(collections_collection_ce, &collection_handlers);
+}
+
+static zend_always_inline zend_object* create_pair_obj()
+{
+    return create_object(collections_pair_ce, &std_object_handlers);
+}
+
 static zend_always_inline void bucket_to_pair(zend_object* pair, Bucket* bucket)
 {
     zval key;
@@ -148,8 +163,8 @@ static zend_always_inline void bucket_to_pair(zend_object* pair, Bucket* bucket)
     {
         ZVAL_LONG(&key, bucket->h);
     }
-    PAIR_UPDATE_FIRST(pair, &key);
-    PAIR_UPDATE_SECOND(pair, &bucket->val);
+    pair_update_first(pair, &key);
+    pair_update_second(pair, &bucket->val);
 }
 
 static int bucket_compare_numeric(const void* op1, const void* op2)
@@ -448,6 +463,37 @@ int collection_offset_exists(zval* object, zval* offset, int check_empty)
     return 0;
 }
 
+int collection_property_exists(zval* object, zval* member, int has_set_exists,
+    void** unused)
+{
+    zend_array* current = COLLECTION_FETCH(object);
+    zval* found = NULL;
+    if (EXPECTED(Z_TYPE_P(member) == IS_STRING))
+    {
+        found = zend_hash_find(current, Z_STR_P(member));
+    }
+    else if (EXPECTED(Z_TYPE_P(member) == IS_LONG))
+    {
+        found = zend_hash_index_find(current, Z_LVAL_P(member));
+    }
+    if (found == NULL)
+    {
+        return 0;
+    }
+    // whether property exists and is not NULL
+    if (has_set_exists == 0)
+    {
+        return Z_TYPE_P(found) != IS_NULL;
+    }
+    // whether property exists and is true
+    else if (has_set_exists == 1)
+    {
+        return zend_is_true(found);
+    }
+    // whether property exists
+    return 1;
+}
+
 void collection_offset_set(zval* object, zval* offset, zval* value)
 {
     zend_array* current = COLLECTION_FETCH(object);
@@ -464,8 +510,13 @@ void collection_offset_set(zval* object, zval* offset, zval* value)
     {
         ERR_BAD_KEY_TYPE();
         return;
-    }    
+    }
     Z_TRY_ADDREF_P(value);
+}
+
+void collection_property_set(zval* object, zval* member, zval* value, void** unused)
+{
+    collection_offset_set(object, member, value);
 }
 
 zval* collection_offset_get(zval* object, zval* offset, int type, zval* retval)
@@ -482,8 +533,21 @@ zval* collection_offset_get(zval* object, zval* offset, int type, zval* retval)
     {
         found = zend_hash_find(current, Z_STR_P(offset));
     }
-    ZVAL_COPY(retval, found);
+    if (found)
+    {
+        ZVAL_COPY_VALUE(retval, found);
+    }
+    else
+    {
+        retval = &EG(uninitialized_zval);
+    }
     return retval;
+}
+
+zval* collection_property_get(zval* object, zval* member, int type, void** unused,
+    zval* retval)
+{
+    return collection_offset_get(object, member, type, retval);
 }
 
 void collection_offset_unset(zval* object, zval* offset)
@@ -498,6 +562,11 @@ void collection_offset_unset(zval* object, zval* offset)
     {
         zend_hash_del(current, Z_STR_P(offset));
     }
+}
+
+void collection_property_unset(zval* object, zval* member, void** unused)
+{
+    collection_offset_unset(object, member);
 }
 
 PHP_METHOD(Collection, __construct) {}
@@ -1769,7 +1838,7 @@ PHP_METHOD(Collection, maxWith)
     zend_array* current = COLLECTION_FETCH_CURRENT();
     ARRAY_CLONE(max_with, current);
     ZEND_HASH_FOREACH_BUCKET(max_with, Bucket* bucket)
-        NEW_PAIR_OBJ(obj);
+        zend_object* obj = create_pair_obj();
         bucket_to_pair(obj, bucket);
         ZVAL_OBJ(&bucket->val, obj);
     ZEND_HASH_FOREACH_END();
@@ -1853,7 +1922,7 @@ PHP_METHOD(Collection, minWith)
     zend_array* current = COLLECTION_FETCH_CURRENT();
     ARRAY_CLONE(min_with, current);
     ZEND_HASH_FOREACH_BUCKET(min_with, Bucket* bucket)
-        NEW_PAIR_OBJ(obj);
+        zend_object* obj = create_pair_obj();
         bucket_to_pair(obj, bucket);
         ZVAL_OBJ(&bucket->val, obj);
     ZEND_HASH_FOREACH_END();
@@ -1949,7 +2018,7 @@ PHP_METHOD(Collection, partition)
     ZEND_PARSE_PARAMETERS_END();
     INIT_FCI(&fci, 2);
     zend_array* current = COLLECTION_FETCH_CURRENT();
-    NEW_PAIR_OBJ(pair);
+    zend_object* pair = create_pair_obj();
     ARRAY_NEW_EX(first_arr, current);
     ARRAY_NEW_EX(second_arr, current);
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
@@ -1973,8 +2042,8 @@ PHP_METHOD(Collection, partition)
     zval first, second;
     ZVAL_ARR(&first, first_arr);
     ZVAL_ARR(&second, second_arr);
-    PAIR_UPDATE_FIRST(pair, &first);
-    PAIR_UPDATE_SECOND(pair, &second);
+    pair_update_first(pair, &first);
+    pair_update_second(pair, &second);
     RETVAL_OBJ(pair);
 }
 
@@ -2519,7 +2588,7 @@ PHP_METHOD(Collection, sortWith)
     zend_array* current = COLLECTION_FETCH_CURRENT();
     ARRAY_CLONE(sorted_with, current);
     ZEND_HASH_FOREACH_BUCKET(sorted_with, Bucket* bucket)
-        NEW_PAIR_OBJ(obj);
+        zend_object* obj = create_pair_obj();
         bucket_to_pair(obj, bucket);
         ZVAL_OBJ(&bucket->val, obj);
     ZEND_HASH_FOREACH_END();
@@ -2672,7 +2741,7 @@ PHP_METHOD(Collection, sortedWith)
     zend_array* current = COLLECTION_FETCH_CURRENT();
     ARRAY_CLONE(sorted_with, current);
     ZEND_HASH_FOREACH_BUCKET(sorted_with, Bucket* bucket)
-        NEW_PAIR_OBJ(obj);
+        zend_object* obj = create_pair_obj();
         bucket_to_pair(obj, bucket);
         ZVAL_OBJ(&bucket->val, obj);
     ZEND_HASH_FOREACH_END();
@@ -2903,7 +2972,7 @@ PHP_METHOD(Collection, toPairs)
     zend_array* current = COLLECTION_FETCH_CURRENT();
     ARRAY_NEW_EX(new_collection, current);
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
-        NEW_PAIR_OBJ(obj);
+        zend_object* obj = create_pair_obj();
         bucket_to_pair(obj, bucket);
         zval pair;
         ZVAL_OBJ(&pair, obj);
@@ -2935,8 +3004,8 @@ PHP_METHOD(Pair, __construct)
         Z_PARAM_ZVAL(first)
         Z_PARAM_ZVAL(second)
     ZEND_PARSE_PARAMETERS_END();
-    zend_array* properties = Z_OBJ_P(getThis())->properties = (zend_array*)emalloc(sizeof(zend_array));
-    zend_hash_init(properties, 2, NULL, ZVAL_PTR_DTOR, 0);
-    PAIR_UPDATE_FIRST(Z_OBJ_P(getThis()), first);
-    PAIR_UPDATE_SECOND(Z_OBJ_P(getThis()), second);
+    Z_TRY_ADDREF_P(first);
+    Z_TRY_ADDREF_P(second);
+    pair_update_first(Z_OBJ_P(getThis()), first);
+    pair_update_second(Z_OBJ_P(getThis()), second);
 }
