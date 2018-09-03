@@ -1781,7 +1781,74 @@ PHP_METHOD(Collection, init)
 
 PHP_METHOD(Collection, intersect)
 {
-    
+    zval* elements;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(elements)
+    ZEND_PARSE_PARAMETERS_END();
+    ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    ARRAY_NEW(intersected, 8);
+    equal_check_func_t eql = NULL;
+    ZEND_HASH_FOREACH_BUCKET(elements_arr, Bucket* bucket)
+        if (UNEXPECTED(eql == NULL))
+        {
+            eql = equal_check_func_init(&bucket->val);
+        }
+        if (bucket->key)
+        {
+            zval* result = zend_hash_find(current, bucket->key);
+            if (result && eql(&bucket->val, result))
+            {
+                zend_hash_add(intersected, bucket->key, result);
+                Z_TRY_ADDREF_P(result);
+            }
+        }
+        else
+        {
+            zval* result = zend_hash_index_find(current, bucket->h);
+            if (result && eql(&bucket->val, result))
+            {
+                zend_hash_index_add(intersected, bucket->h, result);
+                Z_TRY_ADDREF_P(result);
+            }
+        }
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NEW_COLLECTION(intersected);
+}
+
+PHP_METHOD(Collection, intersectKeys)
+{
+    zval* elements;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(elements)
+    ZEND_PARSE_PARAMETERS_END();
+    ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    ARRAY_NEW(intersected, 8);
+    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
+        if (bucket->key)
+        {
+            if (zend_hash_exists(elements_arr, bucket->key))
+            {
+                zend_hash_add(intersected, bucket->key, &bucket->val);
+                Z_TRY_ADDREF(bucket->val);
+            }
+        }
+        else
+        {
+            if (zend_hash_index_exists(elements_arr, bucket->h))
+            {
+                zend_hash_index_add(intersected, bucket->h, &bucket->val);
+                Z_TRY_ADDREF(bucket->val);
+            }
+        }
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NEW_COLLECTION(intersected);
+}
+
+PHP_METHOD(Collection, intersectValues)
+{
+
 }
 
 PHP_METHOD(Collection, isEmpty)

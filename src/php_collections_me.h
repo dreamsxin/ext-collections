@@ -48,6 +48,8 @@ PHP_METHOD(Collection, indexOfFirst);
 PHP_METHOD(Collection, indexOfLast);
 PHP_METHOD(Collection, init);
 PHP_METHOD(Collection, intersect);
+PHP_METHOD(Collection, intersectKeys);
+PHP_METHOD(Collection, intersectValues);
 PHP_METHOD(Collection, isEmpty);
 PHP_METHOD(Collection, isNotEmpty);
 PHP_METHOD(Collection, keys);

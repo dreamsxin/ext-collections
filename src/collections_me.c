@@ -160,6 +160,8 @@ const zend_function_entry collection_methods[] = {
     PHP_ME(Collection, indexOfLast, predicate_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, init, elements_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(Collection, intersect, other_arginfo, ZEND_ACC_PUBLIC)
+    PHP_ME(Collection, intersectKeys, other_arginfo, ZEND_ACC_PUBLIC)
+    PHP_ME(Collection, intersectValues, other_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, isEmpty, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, isNotEmpty, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, keys, NULL, ZEND_ACC_PUBLIC)

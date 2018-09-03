@@ -373,12 +373,33 @@ class Collection implements ArrayAccess, Countable
     static function init($elements) {}
 
     /**
-     * Returns a collection containing all elements that are contained by both this collection and the
-     * specified collection.
+     * Returns a collection containing all key-value pairs that are contained by both this collection
+     * and the specified collection.
      *
      * @param array|Collection $other
+     * @return Collection
      */
     function intersect($other) {}
+
+    /**
+     * Returns a collection containing all elements with keys contained by both this collection
+     * and the specified collection. Values are that of the original collection.
+     *
+     * @param array|Collection $other
+     * @return Collection
+     */
+    function intersectKeys($other) {}
+
+    /**
+     * Returns a collection containing all elements with values contained by both this collection
+     * and the specified collection. Keys are that of the original collection.
+     * 
+     * Duplicate values will be removed.
+     *
+     * @param array|Collection $other
+     * @return Collection
+     */
+    function intersectValues($other) {}
 
     /**
      * Returns true if the collection is empty.
@@ -389,6 +410,8 @@ class Collection implements ArrayAccess, Countable
 
     /**
      * Returns true if the collection is not empty.
+     * 
+     * @return bool
      */
     function isNotEmpty() {}
 
