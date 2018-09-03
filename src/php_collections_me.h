@@ -17,6 +17,8 @@ PHP_METHOD(Collection, associateBy);
 PHP_METHOD(Collection, associateByTo);
 PHP_METHOD(Collection, average);
 PHP_METHOD(Collection, containsAll);
+PHP_METHOD(Collection, containsAllKeys);
+PHP_METHOD(Collection, containsAllValues);
 PHP_METHOD(Collection, containsKey);
 PHP_METHOD(Collection, containsValue);
 PHP_METHOD(Collection, copyOf);

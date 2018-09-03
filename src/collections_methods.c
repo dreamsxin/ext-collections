@@ -738,20 +738,97 @@ PHP_METHOD(Collection, containsAll)
     ZEND_PARSE_PARAMETERS_END();
     ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
     zend_array* current = COLLECTION_FETCH_CURRENT();
-    ZEND_HASH_FOREACH_VAL(elements_arr, zval* element)
-        equal_check_func_t eql = equal_check_func_init(element);
-        int result = 0;
-        ZEND_HASH_FOREACH_VAL(current, zval* val)
-            result = eql(element, val);
-            if (result) {
-                break;
+    equal_check_func_t eql = NULL;
+    ZEND_HASH_FOREACH_BUCKET(elements_arr, Bucket* bucket)
+        if (UNEXPECTED(eql == NULL)) {
+            eql = equal_check_func_init(&bucket->val);
+        }
+        if (bucket->key) {
+            zval* result = zend_hash_find(current, bucket->key);
+            if (!result || !eql(&bucket->val, result)) {
+                RETURN_FALSE;
             }
-        ZEND_HASH_FOREACH_END();
-        if (result == 0) {
-            RETURN_FALSE;
+        } else {
+            zval* result = zend_hash_index_find(current, bucket->h);
+            if (!result || !eql(&bucket->val, result)) {
+                RETURN_FALSE;
+            }
+        }
+    ZEND_HASH_FOREACH_END();
+    RETVAL_TRUE;
+}
+
+PHP_METHOD(Collection, containsAllKeys)
+{
+    zval* elements;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(elements)
+    ZEND_PARSE_PARAMETERS_END();
+    ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    ZEND_HASH_FOREACH_BUCKET(elements_arr, Bucket* bucket)
+        if (bucket->key) {
+            if (!zend_hash_exists(current, bucket->key)) {
+                RETURN_FALSE;
+            }
+        } else {
+            if (!zend_hash_index_exists(current, bucket->h)) {
+                RETURN_FALSE;
+            }
         }
     ZEND_HASH_FOREACH_END();
     RETURN_TRUE;
+}
+
+PHP_METHOD(Collection, containsAllValues)
+{
+    zval* elements;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(elements)
+    ZEND_PARSE_PARAMETERS_END();
+    ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    compare_func_t cmp = NULL;
+    equal_check_func_t eql = NULL;
+    ZEND_HASH_FOREACH_VAL(current, zval* val)
+        cmp = compare_func_init(val, 0, 0);
+        eql = equal_check_func_init(val);
+        break;
+    ZEND_HASH_FOREACH_END();
+    ARRAY_CLONE(sorted_current, current);
+    zend_hash_sort(sorted_current, cmp, 1);
+    ARRAY_CLONE(sorted_other, elements_arr);
+    zend_hash_sort(sorted_other, cmp, 1);
+    Bucket* this = NULL;
+    Bucket* other = sorted_other->arData;
+    Bucket* end_other = other + zend_hash_num_elements(sorted_other);
+    zend_bool result = 1;
+    ZEND_HASH_FOREACH_BUCKET(sorted_current, Bucket* bucket)
+        if (EXPECTED(this) && eql(&bucket->val, &this->val)) {
+            continue;
+        }
+        this = bucket;
+        if (cmp(bucket, other)) {
+            result = 0;
+            break;
+        }
+        do {
+            if (UNEXPECTED(++other == end_other)) {
+                goto end;
+            }
+        } while (eql(&(other - 1)->val, &other->val));
+    ZEND_HASH_FOREACH_END();
+    result = 0;
+    do {
+        if (UNEXPECTED(++other == end_other)) {
+            result = 1;
+            break;
+        }
+    } while (eql(&(other - 1)->val, &other->val));
+end:
+    zend_array_destroy(sorted_current);
+    zend_array_destroy(sorted_other);
+    RETVAL_BOOL(result);
 }
 
 PHP_METHOD(Collection, containsKey)
@@ -1546,18 +1623,18 @@ PHP_METHOD(Collection, intersect)
     zend_array* current = COLLECTION_FETCH_CURRENT();
     ARRAY_NEW(intersected, 8);
     equal_check_func_t eql = NULL;
-    ZEND_HASH_FOREACH_BUCKET(elements_arr, Bucket* bucket)
+    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         if (UNEXPECTED(eql == NULL)) {
             eql = equal_check_func_init(&bucket->val);
         }
         if (bucket->key) {
-            zval* result = zend_hash_find(current, bucket->key);
+            zval* result = zend_hash_find(elements_arr, bucket->key);
             if (result && eql(&bucket->val, result)) {
                 zend_hash_add(intersected, bucket->key, result);
                 Z_TRY_ADDREF_P(result);
             }
         } else {
-            zval* result = zend_hash_index_find(current, bucket->h);
+            zval* result = zend_hash_index_find(elements_arr, bucket->h);
             if (result && eql(&bucket->val, result)) {
                 zend_hash_index_add(intersected, bucket->h, result);
                 Z_TRY_ADDREF_P(result);

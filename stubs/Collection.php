@@ -93,12 +93,28 @@ class Collection implements ArrayAccess, Countable
     function average() {}
 
     /**
-     * Checks if all elements in the specified collection are contained in this collection.
+     * Checks if all key-value pairs in the specified collection are contained in this collection.
      *
      * @param array|Collection $other
      * @return bool
      */
     function containsAll($other) {}
+
+    /**
+     * Checks if all keys in the specified collection are contained in this collection.
+     *
+     * @param array|Collection $other
+     * @return bool
+     */
+    function containsAllKeys($other) {}
+
+        /**
+     * Checks if all values in the specified collection are contained in this collection.
+     *
+     * @param array|Collection $other
+     * @return bool
+     */
+    function containsAllValues($other) {}
 
     /**
      * Checks if the collection contains the given key.

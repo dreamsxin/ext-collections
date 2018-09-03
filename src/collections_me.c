@@ -129,6 +129,8 @@ const zend_function_entry collection_methods[] = {
     PHP_ME(Collection, associateByTo, associate_by_to_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, average, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, containsAll, other_arginfo, ZEND_ACC_PUBLIC)
+    PHP_ME(Collection, containsAllKeys, other_arginfo, ZEND_ACC_PUBLIC)
+    PHP_ME(Collection, containsAllValues, other_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, containsKey, contains_key_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, containsValue, element_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, copyOf, copy_of_arginfo, ZEND_ACC_PUBLIC)
