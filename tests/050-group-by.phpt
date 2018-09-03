@@ -1,5 +1,5 @@
 --TEST--
-Test Collection::groupBy().
+Test Collection::groupBy() and Collection::groupByTo().
 --FILE--
 <?php
 $collection = Collection::init([
@@ -27,18 +27,22 @@ if ($collection1->toArray() != $array) {
 }
 
 $collection = Collection::init([7, 2, 9, 4, 1, 0]);
-$collection1 = $collection->groupBy(function ($value, $key) {
-    if ($key % 2) {
-        return 'odd_idx';
+$collection1 = Collection::init(['foo' => 'bar']);
+$collection2 = $collection->groupByTo($collection1,
+    function ($value, $key) {
+        if ($key % 2) {
+            return 'odd_idx';
+        }
+        return 'even_idx';
     }
-    return 'even_idx';
-});
+);
 $array = [
+    'foo' => 'bar',
     'odd_idx' => [2, 4, 0],
     'even_idx' => [7, 9, 1]
 ];
-if ($collection1->toArray() != $array) {
-    echo 'Collection::groupBy() failed.', PHP_EOL;
+if ($collection2->toArray() != $array) {
+    echo 'Collection::groupByTo() failed.', PHP_EOL;
 }
 ?>
 --EXPECT--

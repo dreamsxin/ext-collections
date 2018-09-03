@@ -1641,7 +1641,53 @@ PHP_METHOD(Collection, groupBy)
 
 PHP_METHOD(Collection, groupByTo)
 {
-    
+    zval* dest;
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_OBJECT_OF_CLASS(dest, collections_collection_ce)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    zend_array* dest_arr = COLLECTION_FETCH(dest);
+    SEPARATE_COLLECTION(dest_arr, dest);
+    zend_bool packed = HT_IS_PACKED(current);
+    INIT_FCI(&fci, 2);
+    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
+        zval* key;
+        zval* value;
+        if (IS_PAIR(retval))
+        {
+            key = PAIR_FIRST(Z_OBJ(retval));
+            value = PAIR_SECOND(Z_OBJ(retval));
+        }
+        else
+        {
+            key = &retval;
+            value = &bucket->val;
+        }
+        Z_TRY_ADDREF_P(value);
+        zend_array* group = array_group_fetch(dest_arr, key);
+        if (UNEXPECTED(group == NULL))
+        {
+            continue;
+        }
+        if (bucket->key)
+        {
+            zend_hash_add(group, bucket->key, value);
+        }
+        else if (packed)
+        {
+            zend_hash_next_index_insert(group, value);
+        }
+        else
+        {
+            zend_hash_index_add(group, bucket->h, value);
+        }
+        zval_ptr_dtor(&retval);
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NEW_COLLECTION(dest_arr);
 }
 
 PHP_METHOD(Collection, indexOf)
