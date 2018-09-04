@@ -541,7 +541,7 @@ PHP_METHOD(Collection, addAll)
     ZEND_PARSE_PARAMETERS_END();
     ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
     zend_array* current = COLLECTION_FETCH_CURRENT();
-    zend_bool packed = HT_IS_PACKED(elements_arr);
+    zend_bool packed = HT_IS_PACKED(current) && HT_IS_PACKED(elements_arr);
     SEPARATE_CURRENT_COLLECTION(current);
     ZEND_HASH_FOREACH_BUCKET(elements_arr, Bucket* bucket)
         Z_TRY_ADDREF(bucket->val);
@@ -2028,7 +2028,25 @@ PHP_METHOD(Collection, partition)
 
 PHP_METHOD(Collection, plus)
 {
-    
+    zval* elements;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(elements)
+    ZEND_PARSE_PARAMETERS_END();
+    ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    ARRAY_CLONE(new_collection, current);
+    zend_bool packed = HT_IS_PACKED(current) && HT_IS_PACKED(elements_arr);
+    ZEND_HASH_FOREACH_BUCKET(elements_arr, Bucket* bucket)
+        Z_TRY_ADDREF(bucket->val);
+        if (bucket->key) {
+            zend_hash_update(new_collection, bucket->key, &bucket->val);
+        } else if (packed) {
+            zend_hash_next_index_insert(new_collection, &bucket->val);
+        } else {
+            zend_hash_index_update(new_collection, bucket->h, &bucket->val);
+        }
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NEW_COLLECTION(new_collection);
 }
 
 PHP_METHOD(Collection, putAll)
@@ -2040,7 +2058,7 @@ PHP_METHOD(Collection, putAll)
     ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
     zend_array* current = COLLECTION_FETCH_CURRENT();
     SEPARATE_CURRENT_COLLECTION(current);
-    zend_bool packed = HT_IS_PACKED(elements_arr);
+    zend_bool packed = HT_IS_PACKED(current) && HT_IS_PACKED(elements_arr);
     ZEND_HASH_FOREACH_BUCKET(elements_arr, Bucket* bucket)
         Z_TRY_ADDREF(bucket->val);
         if (bucket->key) {
@@ -2827,7 +2845,43 @@ PHP_METHOD(Collection, toPairs)
 
 PHP_METHOD(Collection, union)
 {
-    
+    zval* elements;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(elements)
+    ZEND_PARSE_PARAMETERS_END();
+    ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    zend_bool packed = HT_IS_PACKED(current) && HT_IS_PACKED(elements_arr);
+    ARRAY_CLONE(new_collection, current);
+    ZEND_HASH_FOREACH_BUCKET(elements_arr, Bucket* bucket)
+        Z_TRY_ADDREF(bucket->val);
+        if (bucket->key) {
+            zend_hash_add(new_collection, bucket->key, &bucket->val);
+        } else if (packed) {
+            zend_hash_next_index_insert(new_collection, &bucket->val);
+        } else {
+            zend_hash_index_add(new_collection, bucket->h, &bucket->val);
+        }
+    ZEND_HASH_FOREACH_END();
+    uint32_t num_elements = zend_hash_num_elements(new_collection);
+    compare_func_t cmp = NULL;
+    equal_check_func_t eql = NULL;
+    Bucket* ref = (Bucket*)malloc(num_elements * sizeof(Bucket));
+    uint32_t idx = 0;
+    ZEND_HASH_FOREACH_BUCKET(new_collection, Bucket* bucket)
+        if (UNEXPECTED(cmp == NULL)) {
+            cmp = compare_func_init(&bucket->val, 0, 0);
+            eql = equal_check_func_init(&bucket->val);
+        }
+        Bucket* dest = &ref[idx++];
+        dest->key = NULL;
+        dest->h = bucket - new_collection->arData;
+        memcpy(&dest->val, &bucket->val, sizeof(zval));
+    ZEND_HASH_FOREACH_END();
+    COLLECTIONS_G(cmp) = cmp;
+    array_distinct(new_collection, ref, cmp, eql);
+    free(ref);
+    RETVAL_NEW_COLLECTION(new_collection);
 }
 
 PHP_METHOD(Collection, values)
