@@ -1950,31 +1950,6 @@ PHP_METHOD(Collection, minus)
     
 }
 
-PHP_METHOD(Collection, minusAssign)
-{
-    
-}
-
-PHP_METHOD(Collection, minusKeys)
-{
-    
-}
-
-PHP_METHOD(Collection, minusKeysAssign)
-{
-    
-}
-
-PHP_METHOD(Collection, minusValues)
-{
-    
-}
-
-PHP_METHOD(Collection, minusValuesAssign)
-{
-    
-}
-
 PHP_METHOD(Collection, none)
 {
     zend_fcall_info fci;
@@ -2052,21 +2027,6 @@ PHP_METHOD(Collection, partition)
 }
 
 PHP_METHOD(Collection, plus)
-{
-    
-}
-
-PHP_METHOD(Collection, plusAssign)
-{
-    
-}
-
-PHP_METHOD(Collection, plusValues)
-{
-    
-}
-
-PHP_METHOD(Collection, plusValuesAssign)
 {
     
 }
@@ -2208,6 +2168,11 @@ PHP_METHOD(Collection, remove)
 
 PHP_METHOD(Collection, removeAll)
 {
+
+}
+
+PHP_METHOD(Collection, removeWhile)
+{
     zend_fcall_info fci;
     zend_fcall_info_cache fcc;
     ZEND_PARSE_PARAMETERS_START(0, 1)
@@ -2216,10 +2181,6 @@ PHP_METHOD(Collection, removeAll)
     ZEND_PARSE_PARAMETERS_END();
     zend_array* current = COLLECTION_FETCH_CURRENT();
     SEPARATE_CURRENT_COLLECTION(current);
-    if (EX_NUM_ARGS() == 0) {
-        zend_hash_clean(current);
-        return;
-    }
     INIT_FCI(&fci, 2);
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
@@ -2232,21 +2193,7 @@ PHP_METHOD(Collection, removeAll)
 
 PHP_METHOD(Collection, retainAll)
 {
-    zend_fcall_info fci;
-    zend_fcall_info_cache fcc;
-    ZEND_PARSE_PARAMETERS_START(1, 1)
-        Z_PARAM_FUNC(fci, fcc)
-    ZEND_PARSE_PARAMETERS_END();
-    zend_array* current = COLLECTION_FETCH_CURRENT();
-    SEPARATE_CURRENT_COLLECTION(current);
-    INIT_FCI(&fci, 2);
-    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
-        CALLBACK_KEYVAL_INVOKE(params, bucket);
-        if (!zend_is_true(&retval)) {
-            zend_hash_del_bucket(current, bucket);
-        }
-        zval_ptr_dtor(&retval);
-    ZEND_HASH_FOREACH_END();
+    
 }
 
 PHP_METHOD(Collection, reverse)

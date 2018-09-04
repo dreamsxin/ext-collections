@@ -540,49 +540,6 @@ class Collection implements ArrayAccess, Countable
     function minus($elements) {}
 
     /**
-     * Removes all key-value pairs contained in the given collection from this collection.
-     *
-     * @param array|Collection $elements
-     * @return void
-     */
-    function minusAssign($elements) {}
-
-    /**
-     * Returns a collection containing all entries of the original collection except those entries
-     * the keys of which are contained in the given keys collection.
-     *
-     * @param array|Collection $keys
-     * @return Collection
-     */
-    function minusKeys($keys) {}
-
-    /**
-     * Removes all entries the keys of which are contained in the given keys collection from this
-     * collection.
-     *
-     * @param array|Collection $keys
-     * @return void
-     */
-    function minusKeysAssign($keys) {}
-
-    /**
-     * Returns a list containing all elements of the original collection except the elements contained
-     * in the given elements collection.
-     *
-     * @param array|Collection $elements
-     * @return Collection
-     */
-    function minusValues($elements) {}
-
-    /**
-     * Removes all elements contained in the given elements collection from this collection.
-     *
-     * @param array|Collection $elements
-     * @return void
-     */
-    function minusValuesAssign($elements) {}
-
-    /**
      * Returns true if no elements match the given predicate.
      *
      * @param callable $predicate ($value, $key) -> bool
@@ -648,38 +605,12 @@ class Collection implements ArrayAccess, Countable
     function partition($predicate) {}
 
     /**
-     * Creates a new collection by replacing or adding entries to this collection from a given
-     * collection of key-value pairs.
+     * Creates a new collection by replacing or elements to this collection from a given collection.
      *
      * @param array|Collection $elements
      * @return Collection
      */
     function plus($elements) {}
-
-    /**
-     * Appends or replaces all pairs from the given collection of pairs in this collection.
-     *
-     * @param array|Collection $elements
-     * @return void
-     */
-    function plusAssign($elements) {}
-
-    /**
-     * Returns a collection containing all elements of the original collection and then all elements
-     * of the given elements collection.
-     *
-     * @param array|Collection $elements
-     * @return Collection
-     */
-    function plusValues($elements) {}
-
-    /**
-     * Adds all elements of the given elements collection to this collection.
-     *
-     * @param array|Collection $elements
-     * @return void
-     */
-    function plusValuesAssign($elements) {}
 
     /**
      * Puts all the elements of the given collection into this collection.
@@ -717,21 +648,28 @@ class Collection implements ArrayAccess, Countable
     function remove($key, $value) {}
 
     /**
-     * Removes all elements from this collection that match the given predicate. If predicate is not
-     * provided, all elements will be removed.
+     * Removes elements of this collection whose values exists in the given collection.
      *
-     * @param callable $predicate[optional] ($value, $key) -> bool
+     * @param array|Collection $elements[optional]
      * @return void
      */
-    function removeAll($predicate) {}
+    function removeAll($elements) {}
 
     /**
-     * Retains only elements of this collection that match the given predicate.
+     * Removes all elements from this collection that match the given predicate.
      *
      * @param callable $predicate ($value, $key) -> bool
      * @return void
      */
-    function retainAll($predicate) {}
+    function removeWhile($predicate) {}
+
+    /**
+     * Retains elements of this collection whose values exists in the given collection.
+     *
+     * @param array|Collection $elements
+     * @return void
+     */
+    function retainAll($elements) {}
 
     /**
      * Reverses elements in the collection in-place.
