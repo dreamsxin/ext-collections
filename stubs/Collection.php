@@ -425,11 +425,11 @@ class Collection implements ArrayAccess, Countable
     function isEmpty() {}
 
     /**
-     * Returns true if the collection is not empty.
-     * 
+     * Check whether the collection wraps a packed hashtable (regular array).
+     *
      * @return bool
      */
-    function isNotEmpty() {}
+    function isPacked() {}
 
     /**
      * Return a collection of all keys in the collection.
@@ -586,13 +586,6 @@ class Collection implements ArrayAccess, Countable
      * @return Collection
      */
     function onEach($action) {}
-
-    /**
-     * Check whether the collection wraps a packed hashtable (regular array).
-     *
-     * @return bool
-     */
-    function packed() {}
 
     /**
      * Splits the original collection into pair of collections, where first collection contains

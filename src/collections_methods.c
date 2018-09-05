@@ -27,7 +27,7 @@
 #define IS_COLLECTION_P(zval)                                              \
     Z_TYPE_P(zval) == IS_OBJECT && Z_OBJCE_P(zval) == collections_collection_ce
 #define IS_PAIR(zval)                                                      \
-    EXPECTED(Z_TYPE(zval) == IS_OBJECT) && EXPECTED(Z_OBJCE(zval) == collections_pair_ce)
+    Z_TYPE(zval) == IS_OBJECT && Z_OBJCE(zval) == collections_pair_ce
 
 #define SEPARATE_COLLECTION(ht, obj)                                       \
     if (GC_REFCOUNT(ht) > 1) {                                             \
@@ -607,7 +607,7 @@ PHP_METHOD(Collection, associate)
     ARRAY_NEW_EX(new_collection, current);
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
-        if (IS_PAIR(retval)) {
+        if (EXPECTED(IS_PAIR(retval))) {
             zval* key = PAIR_FIRST(Z_OBJ(retval));
             zval* value = PAIR_SECOND(Z_OBJ(retval));
             if (Z_TYPE_P(key) == IS_LONG) {
@@ -642,7 +642,7 @@ PHP_METHOD(Collection, associateTo)
     SEPARATE_COLLECTION(dest_arr, dest);
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
-        if (IS_PAIR(retval)) {
+        if (EXPECTED(IS_PAIR(retval))) {
             zval* key = PAIR_FIRST(Z_OBJ(retval));
             zval* value = PAIR_SECOND(Z_OBJ(retval));
             if (Z_TYPE_P(key) == IS_LONG) {
@@ -738,19 +738,15 @@ PHP_METHOD(Collection, containsAll)
     ZEND_PARSE_PARAMETERS_END();
     ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
     zend_array* current = COLLECTION_FETCH_CURRENT();
-    equal_check_func_t eql = NULL;
     ZEND_HASH_FOREACH_BUCKET(elements_arr, Bucket* bucket)
-        if (UNEXPECTED(eql == NULL)) {
-            eql = equal_check_func_init(&bucket->val);
-        }
         if (bucket->key) {
             zval* result = zend_hash_find(current, bucket->key);
-            if (!result || !eql(&bucket->val, result)) {
+            if (!result || !fast_equal_check_function(&bucket->val, result)) {
                 RETURN_FALSE;
             }
         } else {
             zval* result = zend_hash_index_find(current, bucket->h);
-            if (!result || !eql(&bucket->val, result)) {
+            if (!result || !fast_equal_check_function(&bucket->val, result)) {
                 RETURN_FALSE;
             }
         }
@@ -1465,7 +1461,7 @@ PHP_METHOD(Collection, groupBy)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
         zval* key;
         zval* value;
-        if (IS_PAIR(retval)) {
+        if (EXPECTED(IS_PAIR(retval))) {
             key = PAIR_FIRST(Z_OBJ(retval));
             value = PAIR_SECOND(Z_OBJ(retval));
         } else {
@@ -1507,7 +1503,7 @@ PHP_METHOD(Collection, groupByTo)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
         zval* key;
         zval* value;
-        if (IS_PAIR(retval)) {
+        if (EXPECTED(IS_PAIR(retval))) {
             key = PAIR_FIRST(Z_OBJ(retval));
             value = PAIR_SECOND(Z_OBJ(retval));
         } else {
@@ -1680,10 +1676,10 @@ PHP_METHOD(Collection, isEmpty)
     RETVAL_BOOL(zend_hash_num_elements(current) == 0);
 }
 
-PHP_METHOD(Collection, isNotEmpty)
+PHP_METHOD(Collection, isPacked)
 {
     zend_array* current = COLLECTION_FETCH_CURRENT();
-    RETVAL_BOOL(zend_hash_num_elements(current));
+    RETVAL_BOOL(HT_IS_PACKED(current));
 }
 
 PHP_METHOD(Collection, keys)
@@ -1947,7 +1943,31 @@ PHP_METHOD(Collection, minWith)
 
 PHP_METHOD(Collection, minus)
 {
-    
+    zval* elements;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(elements)
+    ZEND_PARSE_PARAMETERS_END();
+    ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    ARRAY_NEW(new_collection, 8);
+    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
+        zval* result;
+        if (bucket->key) {
+            result = zend_hash_find(elements_arr, bucket->key);
+        } else {
+            result = zend_hash_index_find(elements_arr, bucket->h);
+        }
+        if (result && fast_equal_check_function(result, &bucket->val)) {
+            continue;
+        }
+        Z_TRY_ADDREF(bucket->val);
+        if (bucket->key) {
+            zend_hash_add(new_collection, bucket->key, &bucket->val);
+        } else {
+            zend_hash_index_add(new_collection, bucket->h, &bucket->val);
+        }
+    ZEND_HASH_FOREACH_END();
+    RETVAL_NEW_COLLECTION(new_collection);
 }
 
 PHP_METHOD(Collection, none)
@@ -1984,12 +2004,6 @@ PHP_METHOD(Collection, onEach)
         zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
     RETVAL_ZVAL(getThis(), 1, 0);
-}
-
-PHP_METHOD(Collection, packed)
-{
-    zend_array* current = COLLECTION_FETCH_CURRENT();
-    RETVAL_BOOL(HT_IS_PACKED(current));
 }
 
 PHP_METHOD(Collection, partition)
@@ -2268,6 +2282,11 @@ PHP_METHOD(Collection, shuffle)
     for (; offset < num_elements - 1; ++offset) {
         zend_long rand_idx = php_mt_rand_range(offset, num_elements - 1);
         zend_hash_bucket_renum_swap(&bucket[offset], &bucket[rand_idx]);
+    }
+    if (GC_REFCOUNT(current) > 1) {
+        GC_DELREF(current);
+    } else {
+        zend_array_destroy(current);
     }
     if (GC_REFCOUNT(current) > 1) {
         GC_DELREF(current);

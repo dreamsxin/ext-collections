@@ -1,11 +1,11 @@
 --TEST--
-Test Collection::isEmpty() and Collection::isNotEmpty().
+Test Collection::isEmpty().
 --FILE--
 <?php
 if (!Collection::init()->isEmpty()) {
     echo 'Collection::isEmpty() failed.', PHP_EOL;
 }
-if (!Collection::init(['foo', 'bar'])->isNotEmpty()) {
+if (Collection::init(['foo', 'bar'])->isEmpty()) {
     echo 'Collection::isNotEmpty() failed.', PHP_EOL;
 }
 ?>
