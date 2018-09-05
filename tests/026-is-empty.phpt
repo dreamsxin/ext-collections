@@ -6,7 +6,7 @@ if (!Collection::init()->isEmpty()) {
     echo 'Collection::isEmpty() failed.', PHP_EOL;
 }
 if (Collection::init(['foo', 'bar'])->isEmpty()) {
-    echo 'Collection::isNotEmpty() failed.', PHP_EOL;
+    echo 'Collection::isEmpty() failed.', PHP_EOL;
 }
 ?>
 --EXPECT--
