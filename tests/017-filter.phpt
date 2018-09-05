@@ -2,7 +2,7 @@
 Test Collection::filter(), Collection::filterNot(), Collection::filterTo(), Collection::filterNotTo().
 --FILE--
 <?php
-$array = [1, 3, 4, 5, 8, 10, 13];
+$array = [1, 3, 4, 5, 8, 10, strval(1).strval(3)];
 $pred_is_odd = function ($value) {
     return $value % 2;
 };

@@ -16,7 +16,7 @@ $array1 = $collection->associateByTo($collection, function ($value, $key) {
     return $key;
 })->toArray();
 if ($array1 != $array + $collection->toArray() || $collection->toArray() != $array1) {
-    echo 'Collection::associateTo() failed.', PHP_EOL;
+    echo 'Collection::associateByTo() failed.', PHP_EOL;
 }
 ?>
 --EXPECT--

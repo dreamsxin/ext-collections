@@ -88,7 +88,7 @@ class Collection implements ArrayAccess, Countable
     /**
      * Returns an average value of elements in the collection.
      *
-     * @return double
+     * @return double|false
      */
     function average() {}
 
