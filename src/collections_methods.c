@@ -555,7 +555,7 @@ PHP_METHOD(Collection, addAll)
         if (bucket->key) {
             result = zend_hash_add(current, bucket->key, &bucket->val);
         } else if (packed) {
-            zend_hash_next_index_insert(current, &bucket->val);
+            result = zend_hash_next_index_insert(current, &bucket->val);
         } else {
             result = zend_hash_index_add(current, bucket->h, &bucket->val);
         }
@@ -941,11 +941,11 @@ PHP_METHOD(Collection, copyOfRange)
         --num_elements;
         Z_TRY_ADDREF(bucket->val);
         if (bucket->key) {
-            zend_hash_add(new_collection, bucket->key, &bucket->val);
+            zend_hash_add_new(new_collection, bucket->key, &bucket->val);
         } else if (packed) {
             zend_hash_next_index_insert(new_collection, &bucket->val);
         } else {
-            zend_hash_index_add(new_collection, bucket->h, &bucket->val);
+            zend_hash_index_add_new(new_collection, bucket->h, &bucket->val);
         }
     }
     RETVAL_NEW_COLLECTION(new_collection);
@@ -1036,7 +1036,6 @@ PHP_METHOD(Collection, drop)
             continue;
         }
         --n;
-        zval_ptr_dtor(&bucket->val);
         zend_hash_del_bucket(new_collection, bucket);
     }
     RETVAL_NEW_COLLECTION(new_collection);
@@ -1061,7 +1060,6 @@ PHP_METHOD(Collection, dropLast)
             continue;
         }
         --n;
-        zval_ptr_dtor(&bucket->val);
         zend_hash_del_bucket(new_collection, bucket);
     }
     RETVAL_NEW_COLLECTION(new_collection);
@@ -1157,11 +1155,11 @@ PHP_METHOD(Collection, filter)
         if (zend_is_true(&retval)) {
             Z_TRY_ADDREF(bucket->val);
             if (bucket->key) {
-                zend_hash_add(new_collection, bucket->key, &bucket->val);
+                zend_hash_add_new(new_collection, bucket->key, &bucket->val);
             } else if (packed) {
                 zend_hash_next_index_insert(new_collection, &bucket->val);
             } else {
-                zend_hash_index_add(new_collection, bucket->h, &bucket->val);
+                zend_hash_index_add_new(new_collection, bucket->h, &bucket->val);
             }
         }
         zval_ptr_dtor(&retval);
@@ -1185,11 +1183,11 @@ PHP_METHOD(Collection, filterNot)
         if (!zend_is_true(&retval)) {
             Z_TRY_ADDREF(bucket->val);
             if (bucket->key) {
-                zend_hash_add(new_collection, bucket->key, &bucket->val);
+                zend_hash_add_new(new_collection, bucket->key, &bucket->val);
             } else if (packed) {
                 zend_hash_next_index_insert(new_collection, &bucket->val);
             } else {
-                zend_hash_index_add(new_collection, bucket->h, &bucket->val);
+                zend_hash_index_add_new(new_collection, bucket->h, &bucket->val);
             }
         }
         zval_ptr_dtor(&retval);
@@ -1214,11 +1212,11 @@ PHP_METHOD(Collection, filterNotTo)
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
         if (!zend_is_true(&retval)) {
-            zval* result = NULL;
+            zval* result;
             if (bucket->key) {
                 result = zend_hash_add(dest_arr, bucket->key, &bucket->val);
             } else if (packed) {
-                zend_hash_next_index_insert(dest_arr, &bucket->val);
+                result = zend_hash_next_index_insert(dest_arr, &bucket->val);
             } else {
                 result = zend_hash_index_add(dest_arr, bucket->h, &bucket->val);
             }
@@ -1252,7 +1250,7 @@ PHP_METHOD(Collection, filterTo)
             if (bucket->key) {
                 result = zend_hash_add(dest_arr, bucket->key, &bucket->val);
             } else if (packed) {
-                zend_hash_next_index_insert(dest_arr, &bucket->val);
+                result = zend_hash_next_index_insert(dest_arr, &bucket->val);
             } else {
                 result = zend_hash_index_add(dest_arr, bucket->h, &bucket->val);
             }
@@ -1311,11 +1309,14 @@ PHP_METHOD(Collection, flatMap)
         zval* retval_p = &retval;
         ELEMENTS_VALIDATE(retval_p, ERR_BAD_CALLBACK_RETVAL, continue);
         ZEND_HASH_FOREACH_BUCKET(retval_p_arr, Bucket* bucket)
-            Z_TRY_ADDREF(bucket->val);
+            zval* result;
             if (bucket->key) {
-                zend_hash_add(new_collection, bucket->key, &bucket->val);
+                result = zend_hash_add(new_collection, bucket->key, &bucket->val);
             } else {
-                zend_hash_next_index_insert(new_collection, &bucket->val);
+                result = zend_hash_next_index_insert(new_collection, &bucket->val);
+            }
+            if (result) {
+                Z_TRY_ADDREF(bucket->val);
             }
         ZEND_HASH_FOREACH_END();
         zval_ptr_dtor(&retval);
@@ -1341,11 +1342,14 @@ PHP_METHOD(Collection, flatMapTo)
         zval* retval_p = &retval;
         ELEMENTS_VALIDATE(retval_p, ERR_BAD_CALLBACK_RETVAL, continue);
         ZEND_HASH_FOREACH_BUCKET(retval_p_arr, Bucket* bucket)
-            Z_TRY_ADDREF(bucket->val);
+            zval* result;
             if (bucket->key) {
-                zend_hash_add(dest_arr, bucket->key, &bucket->val);
+                result = zend_hash_add(dest_arr, bucket->key, &bucket->val);
             } else {
-                zend_hash_next_index_insert(dest_arr, &bucket->val);
+                result = zend_hash_next_index_insert(dest_arr, &bucket->val);
+            }
+            if (result) {
+                Z_TRY_ADDREF(bucket->val);
             }
         ZEND_HASH_FOREACH_END();
         zval_ptr_dtor(&retval);
@@ -1360,20 +1364,25 @@ PHP_METHOD(Collection, flatten)
     ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
         zval* val = &bucket->val;
         ELEMENTS_VALIDATE(val, ERR_SILENCED, {
-            Z_TRY_ADDREF_P(val);
             if (bucket->key) {
-                zend_hash_add(new_collection, bucket->key, val);
+                val = zend_hash_add(new_collection, bucket->key, val);
             } else {
-                zend_hash_next_index_insert(new_collection, val);
+                val = zend_hash_next_index_insert(new_collection, val);
+            }
+            if (val) {
+                Z_TRY_ADDREF_P(val);
             }
             continue;
         });
         ZEND_HASH_FOREACH_BUCKET(val_arr, Bucket* bucket)
-            Z_TRY_ADDREF(bucket->val);
+            zval* result;
             if (bucket->key) {
-                zend_hash_add(new_collection, bucket->key, &bucket->val);
+                result = zend_hash_add(new_collection, bucket->key, &bucket->val);
             } else {
-                zend_hash_next_index_insert(new_collection, &bucket->val);
+                result = zend_hash_next_index_insert(new_collection, &bucket->val);
+            }
+            if (result) {
+                Z_TRY_ADDREF(bucket->val);
             }
         ZEND_HASH_FOREACH_END();
     ZEND_HASH_FOREACH_END();
@@ -1507,11 +1516,11 @@ PHP_METHOD(Collection, groupBy)
         }
         Z_TRY_ADDREF_P(value);
         if (bucket->key) {
-            zend_hash_add(group, bucket->key, value);
+            zend_hash_add_new(group, bucket->key, value);
         } else if (packed) {
             zend_hash_next_index_insert(group, value);
         } else {
-            zend_hash_index_add(group, bucket->h, value);
+            zend_hash_index_add_new(group, bucket->h, value);
         }
         zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
@@ -1550,7 +1559,7 @@ PHP_METHOD(Collection, groupByTo)
         if (bucket->key) {
             value = zend_hash_add(group, bucket->key, value);
         } else if (packed) {
-            zend_hash_next_index_insert(group, value);
+            value = zend_hash_next_index_insert(group, value);
         } else {
             value = zend_hash_index_add(group, bucket->h, value);
         }
@@ -1661,14 +1670,14 @@ PHP_METHOD(Collection, intersect)
         if (bucket->key) {
             zval* result = zend_hash_find(elements_arr, bucket->key);
             if (result && eql(&bucket->val, result)) {
-                zend_hash_add(intersected, bucket->key, result);
                 Z_TRY_ADDREF_P(result);
+                zend_hash_add_new(intersected, bucket->key, result);
             }
         } else {
             zval* result = zend_hash_index_find(elements_arr, bucket->h);
             if (result && eql(&bucket->val, result)) {
-                zend_hash_index_add(intersected, bucket->h, result);
                 Z_TRY_ADDREF_P(result);
+                zend_hash_index_add_new(intersected, bucket->h, result);
             }
         }
     ZEND_HASH_FOREACH_END();
@@ -1688,12 +1697,12 @@ PHP_METHOD(Collection, intersectKeys)
         if (bucket->key) {
             if (zend_hash_exists(elements_arr, bucket->key)) {
                 Z_TRY_ADDREF(bucket->val);
-                zend_hash_add(intersected, bucket->key, &bucket->val);
+                zend_hash_add_new(intersected, bucket->key, &bucket->val);
             }
         } else {
             if (zend_hash_index_exists(elements_arr, bucket->h)) {
                 Z_TRY_ADDREF(bucket->val);
-                zend_hash_index_add(intersected, bucket->h, &bucket->val);
+                zend_hash_index_add_new(intersected, bucket->h, &bucket->val);
             }
         }
     ZEND_HASH_FOREACH_END();
@@ -1998,9 +2007,9 @@ PHP_METHOD(Collection, minus)
         }
         Z_TRY_ADDREF(bucket->val);
         if (bucket->key) {
-            zend_hash_add(new_collection, bucket->key, &bucket->val);
+            zend_hash_add_new(new_collection, bucket->key, &bucket->val);
         } else {
-            zend_hash_index_add(new_collection, bucket->h, &bucket->val);
+            zend_hash_index_add_new(new_collection, bucket->h, &bucket->val);
         }
     ZEND_HASH_FOREACH_END();
     RETVAL_NEW_COLLECTION(new_collection);
@@ -2060,11 +2069,11 @@ PHP_METHOD(Collection, partition)
         zend_array* which = zend_is_true(&retval) ? first_arr : second_arr;
         Z_TRY_ADDREF(bucket->val);
         if (bucket->key) {
-            zend_hash_add(which, bucket->key, &bucket->val);
+            zend_hash_add_new(which, bucket->key, &bucket->val);
         } else if (packed) {
             zend_hash_next_index_insert(which, &bucket->val);
         } else {
-            zend_hash_index_add(which, bucket->h, &bucket->val);
+            zend_hash_index_add_new(which, bucket->h, &bucket->val);
         }
         zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
@@ -2715,7 +2724,7 @@ PHP_METHOD(Collection, sum)
                 ZVAL_DOUBLE(&sum, 0.0);
             } else {
                 ERR_NOT_NUMERIC();
-                RETURN_NULL();
+                RETURN_FALSE;
             }
         }
         if (Z_TYPE_P(val) == IS_LONG) {
@@ -2724,7 +2733,7 @@ PHP_METHOD(Collection, sum)
             Z_DVAL(sum) += Z_DVAL_P(val);
         } else {
             ERR_NOT_NUMERIC();
-            RETURN_NULL();
+            RETURN_FALSE;
         }
     ZEND_HASH_FOREACH_END();
     RETVAL_ZVAL(&sum, 0, 0);
@@ -2751,7 +2760,7 @@ PHP_METHOD(Collection, sumBy)
             } else {
                 ERR_NOT_NUMERIC();
                 zval_ptr_dtor(&retval);
-                RETURN_NULL();
+                RETURN_FALSE;
             }
         }
         if (Z_TYPE(retval) == IS_LONG) {
@@ -2761,7 +2770,7 @@ PHP_METHOD(Collection, sumBy)
         } else {
             ERR_NOT_NUMERIC();
             zval_ptr_dtor(&retval);
-            RETURN_NULL();
+            RETURN_FALSE;
         }
     ZEND_HASH_FOREACH_END();
     RETVAL_ZVAL(&sum, 0, 0);
@@ -2789,8 +2798,8 @@ PHP_METHOD(Collection, take)
         }
         --n;
         Z_TRY_ADDREF(bucket->val);
-        // Works for any zend_array, however, it doesn't make sense if you use any of these methods
-        // on non-packed zend_arrays.
+        // Works for any zend_array, however, it doesn't make sense if you use any of
+        // these methods on non-packed zend_arrays.
         if (bucket->key)  {
             zend_hash_add_new(new_collection, bucket->key, &bucket->val);
         } else if (packed) {
@@ -2942,7 +2951,7 @@ PHP_METHOD(Collection, toCollection)
         if (bucket->key) {
             result = zend_hash_add(dest_arr, bucket->key, &bucket->val);
         } else if (packed) {
-            zend_hash_next_index_insert(dest_arr, &bucket->val);
+            result = zend_hash_next_index_insert(dest_arr, &bucket->val);
         } else {
             result = zend_hash_index_add(dest_arr, bucket->h, &bucket->val);
         }
@@ -2979,13 +2988,16 @@ PHP_METHOD(Collection, union)
     zend_bool packed = HT_IS_PACKED(current) && HT_IS_PACKED(elements_arr);
     ARRAY_CLONE(new_collection, current);
     ZEND_HASH_FOREACH_BUCKET(elements_arr, Bucket* bucket)
-        Z_TRY_ADDREF(bucket->val);
+        zval* result;
         if (bucket->key) {
-            zend_hash_add(new_collection, bucket->key, &bucket->val);
+            result = zend_hash_add(new_collection, bucket->key, &bucket->val);
         } else if (packed) {
-            zend_hash_next_index_insert(new_collection, &bucket->val);
+            result = zend_hash_next_index_insert(new_collection, &bucket->val);
         } else {
-            zend_hash_index_add(new_collection, bucket->h, &bucket->val);
+            result = zend_hash_index_add(new_collection, bucket->h, &bucket->val);
+        }
+        if (result) {
+            Z_TRY_ADDREF(bucket->val);
         }
     ZEND_HASH_FOREACH_END();
     uint32_t num_elements = zend_hash_num_elements(new_collection);

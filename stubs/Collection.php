@@ -812,7 +812,7 @@ class Collection implements ArrayAccess, Countable
      * 
      * All elements should be of the same type, int or double. Otherwise result is undefined.
      * 
-     * @return int|double|null
+     * @return int|double|false
      */
     function sum() {}
 
@@ -824,7 +824,7 @@ class Collection implements ArrayAccess, Countable
      * Otherwise result is undefined.
      * 
      * @param callable $selector ($value, $key) -> int|double
-     * @return int|double|null
+     * @return int|double|false
      */
     function sumBy($selector) {}
 
