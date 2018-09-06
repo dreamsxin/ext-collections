@@ -1829,17 +1829,14 @@ PHP_METHOD(Collection, max)
         Z_PARAM_LONG(flags)
     ZEND_PARSE_PARAMETERS_END();
     zend_array* current = COLLECTION_FETCH_CURRENT();
-    if (UNEXPECTED(zend_hash_num_elements(current) == 0)) {
-        RETURN_NULL();
-    }
     compare_func_t cmp;
     ZEND_HASH_FOREACH_VAL(current, zval* val)
         cmp = compare_func_init(val, 0, flags);
         break;
     ZEND_HASH_FOREACH_END();
     zval* max = zend_hash_minmax(current, cmp, 1);
-    if (max) {
-        RETURN_ZVAL(max, 0, 0);
+    if (EXPECTED(max)) {
+        RETURN_ZVAL(max, 1, 0);
     }
     RETVAL_NULL();
 }
@@ -1855,9 +1852,6 @@ PHP_METHOD(Collection, maxBy)
         Z_PARAM_LONG(flags)
     ZEND_PARSE_PARAMETERS_END();
     zend_array* current = COLLECTION_FETCH_CURRENT();
-    if (UNEXPECTED(zend_hash_num_elements(current) == 0)) {
-        RETURN_NULL();
-    }
     ARRAY_NEW_EX(max_by, current);
     compare_func_t cmp = NULL;
     INIT_FCI(&fci, 2);
@@ -1869,7 +1863,7 @@ PHP_METHOD(Collection, maxBy)
         zend_hash_index_add(max_by, bucket - current->arData, &retval);
     ZEND_HASH_FOREACH_END();
     zval* max = zend_hash_minmax(max_by, cmp, 1);
-    if (max) {
+    if (EXPECTED(max)) {
         zend_ulong offset = *(zend_ulong*)(max + 1);
         zval* ret = &(current->arData + offset)->val;
         RETVAL_ZVAL(ret, 1, 0);
@@ -1888,9 +1882,6 @@ PHP_METHOD(Collection, maxWith)
         Z_PARAM_FUNC(fci, fcc)
     ZEND_PARSE_PARAMETERS_END();
     zend_array* current = COLLECTION_FETCH_CURRENT();
-    if (UNEXPECTED(zend_hash_num_elements(current) == 0)) {
-        RETURN_NULL();
-    }
     FCI_G = &fci;
     FCC_G = &fcc;
     ARRAY_CLONE(max_with, current);
@@ -1899,13 +1890,13 @@ PHP_METHOD(Collection, maxWith)
         bucket_to_pair(obj, bucket);
         ZVAL_OBJ(&bucket->val, obj);
     ZEND_HASH_FOREACH_END();
-    zval* max = PAIR_SECOND(Z_OBJ_P(zend_hash_minmax(max_with, bucket_compare_userland, 1)));
-    Z_TRY_ADDREF_P(max);
-    zend_array_destroy(max_with);
-    if (max) {
-        RETURN_ZVAL(max, 0, 0);
+    zval* result = zend_hash_minmax(max_with, bucket_compare_userland, 1);
+    if (EXPECTED(result)) {
+        RETVAL_ZVAL(PAIR_SECOND(Z_OBJ_P(result)), 1, 0);
+    } else {
+        RETVAL_NULL();
     }
-    RETVAL_NULL();
+    zend_array_destroy(max_with);
 }
 
 PHP_METHOD(Collection, min)
@@ -1916,17 +1907,14 @@ PHP_METHOD(Collection, min)
         Z_PARAM_LONG(flags)
     ZEND_PARSE_PARAMETERS_END();
     zend_array* current = COLLECTION_FETCH_CURRENT();
-    if (UNEXPECTED(zend_hash_num_elements(current) == 0)) {
-        RETURN_NULL();
-    }
     compare_func_t cmp;
     ZEND_HASH_FOREACH_VAL(current, zval* val)
         cmp = compare_func_init(val, 0, flags);
         break;
     ZEND_HASH_FOREACH_END();
     zval* min = zend_hash_minmax(current, cmp, 0);
-    if (min) {
-        RETURN_ZVAL(min, 0, 0);
+    if (EXPECTED(min)) {
+        RETURN_ZVAL(min, 1, 0);
     }
     RETVAL_NULL();
 }
@@ -1942,9 +1930,6 @@ PHP_METHOD(Collection, minBy)
         Z_PARAM_LONG(flags)
     ZEND_PARSE_PARAMETERS_END();
     zend_array* current = COLLECTION_FETCH_CURRENT();
-    if (UNEXPECTED(zend_hash_num_elements(current) == 0)) {
-        RETURN_NULL();
-    }
     ARRAY_NEW_EX(min_by, current);
     compare_func_t cmp = NULL;
     INIT_FCI(&fci, 2);
@@ -1956,7 +1941,7 @@ PHP_METHOD(Collection, minBy)
         zend_hash_index_add(min_by, bucket - current->arData, &retval);
     ZEND_HASH_FOREACH_END();
     zval* min = zend_hash_minmax(min_by, cmp, 0);
-    if (min) {
+    if (EXPECTED(min)) {
         zend_ulong offset = *(zend_ulong*)(min + 1);
         zval* ret = &(current->arData + offset)->val;
         RETVAL_ZVAL(ret, 1, 0);
@@ -1975,9 +1960,6 @@ PHP_METHOD(Collection, minWith)
         Z_PARAM_FUNC(fci, fcc)
     ZEND_PARSE_PARAMETERS_END();
     zend_array* current = COLLECTION_FETCH_CURRENT();
-    if (UNEXPECTED(zend_hash_num_elements(current) == 0)) {
-        RETURN_NULL();
-    }
     FCI_G = &fci;
     FCC_G = &fcc;
     ARRAY_CLONE(min_with, current);
@@ -1986,13 +1968,13 @@ PHP_METHOD(Collection, minWith)
         bucket_to_pair(obj, bucket);
         ZVAL_OBJ(&bucket->val, obj);
     ZEND_HASH_FOREACH_END();
-    zval* min = PAIR_SECOND(Z_OBJ_P(zend_hash_minmax(min_with, bucket_compare_userland, 0)));
-    Z_TRY_ADDREF_P(min);
-    zend_array_destroy(min_with);
-    if (min) {
-        RETURN_ZVAL(min, 0, 0);
+    zval* result = zend_hash_minmax(min_with, bucket_compare_userland, 0);
+    if (EXPECTED(result)) {
+        RETVAL_ZVAL(PAIR_SECOND(Z_OBJ_P(result)), 1, 0);
+    } else {
+        RETVAL_NULL();
     }
-    RETVAL_NULL();
+    zend_array_destroy(min_with);
 }
 
 PHP_METHOD(Collection, minus)
