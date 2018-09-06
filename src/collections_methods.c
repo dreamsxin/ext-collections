@@ -2366,9 +2366,11 @@ PHP_METHOD(Collection, set)
     zend_array* current = COLLECTION_FETCH_CURRENT();
     if (Z_TYPE_P(key) == IS_STRING) {
         SEPARATE_CURRENT_COLLECTION(current);
+        Z_TRY_ADDREF_P(value);
         zend_hash_update(current, Z_STR_P(key), value);
     } else if (Z_TYPE_P(key) == IS_LONG) {
         SEPARATE_CURRENT_COLLECTION(current);
+        Z_TRY_ADDREF_P(value);
         zend_hash_index_update(current, Z_LVAL_P(key), value);
     } else {
         ERR_BAD_KEY_TYPE();
