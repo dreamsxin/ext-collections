@@ -206,6 +206,8 @@ const zend_function_entry collection_methods[] = {
     PHP_ME(Collection, sortedByDescending, selector_flags_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, sortedDescending, flags_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, sortedWith, comparator_arginfo, ZEND_ACC_PUBLIC)
+    PHP_ME(Collection, sum, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Collection, sumBy, selector_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, take, n_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, takeLast, n_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, takeLastWhile, predicate_arginfo, ZEND_ACC_PUBLIC)

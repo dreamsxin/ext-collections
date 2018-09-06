@@ -808,6 +808,27 @@ class Collection implements ArrayAccess, Countable
     function sortedWith($comparator) {}
 
     /**
+     * Returns the sum of all elements in the collection.
+     * 
+     * All elements should be of the same type, int or double. Otherwise result is undefined.
+     * 
+     * @return int|double|null
+     */
+    function sum() {}
+
+    /**
+     * Returns the sum of all values produced by selector function applied to each element
+     * in the collection.
+     * 
+     * All return values of the selector function should be of the same type, int or double.
+     * Otherwise result is undefined.
+     * 
+     * @param callable $selector ($value, $key) -> int|double
+     * @return int|double|null
+     */
+    function sumBy($selector) {}
+
+    /**
      * Returns a collection containing first n elements.
      *
      * @param int $n

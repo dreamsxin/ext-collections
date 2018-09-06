@@ -2702,6 +2702,71 @@ PHP_METHOD(Collection, sortedWith)
     RETVAL_NEW_COLLECTION(sorted_with);
 }
 
+PHP_METHOD(Collection, sum)
+{
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    zval sum;
+    ZVAL_NULL(&sum);
+    ZEND_HASH_FOREACH_VAL(current, zval* val)
+        if (UNEXPECTED(ZVAL_IS_NULL(&sum))) {
+            if (Z_TYPE_P(val) == IS_LONG) {
+                ZVAL_LONG(&sum, 0);
+            } else if (EXPECTED(Z_TYPE_P(val) == IS_DOUBLE)) {
+                ZVAL_DOUBLE(&sum, 0.0);
+            } else {
+                ERR_NOT_NUMERIC();
+                RETURN_NULL();
+            }
+        }
+        if (Z_TYPE_P(val) == IS_LONG) {
+            Z_LVAL(sum) += Z_LVAL_P(val);
+        } else if (EXPECTED(Z_TYPE_P(val) == IS_DOUBLE)) {
+            Z_DVAL(sum) += Z_DVAL_P(val);
+        } else {
+            ERR_NOT_NUMERIC();
+            RETURN_NULL();
+        }
+    ZEND_HASH_FOREACH_END();
+    RETVAL_ZVAL(&sum, 0, 0);
+}
+
+PHP_METHOD(Collection, sumBy)
+{
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    zval sum;
+    ZVAL_NULL(&sum);
+    INIT_FCI(&fci, 2);
+    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
+        if (UNEXPECTED(ZVAL_IS_NULL(&sum))) {
+            if (Z_TYPE(retval) == IS_LONG) {
+                ZVAL_LONG(&sum, 0);
+            } else if (EXPECTED(Z_TYPE(retval) == IS_DOUBLE)) {
+                ZVAL_DOUBLE(&sum, 0.0);
+            } else {
+                ERR_NOT_NUMERIC();
+                zval_ptr_dtor(&retval);
+                RETURN_NULL();
+            }
+        }
+        if (Z_TYPE(retval) == IS_LONG) {
+            Z_LVAL(sum) += Z_LVAL(retval);
+        } else if (EXPECTED(Z_TYPE(retval) == IS_DOUBLE)) {
+            Z_DVAL(sum) += Z_DVAL(retval);
+        } else {
+            ERR_NOT_NUMERIC();
+            zval_ptr_dtor(&retval);
+            RETURN_NULL();
+        }
+    ZEND_HASH_FOREACH_END();
+    RETVAL_ZVAL(&sum, 0, 0);
+}
+
 PHP_METHOD(Collection, take)
 {
     zend_long n;
