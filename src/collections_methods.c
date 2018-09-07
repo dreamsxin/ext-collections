@@ -25,6 +25,11 @@
 #define PAIR_FIRST(obj)          OBJ_PROP_NUM(obj, 0)
 #define PAIR_SECOND(obj)         OBJ_PROP_NUM(obj, 1)
 
+#define REMOVE_DUPLICATE         (1 << 0)
+#define RETAIN_DUPLICATE         (0 << 0)
+#define ELEMENT_SUBTRACT         (1 << 1)
+#define ELEMENT_INTERSECT        (0 << 1)
+
 #define IS_COLLECTION_P(zval)                                              \
     Z_TYPE_P(zval) == IS_OBJECT && Z_OBJCE_P(zval) == collections_collection_ce
 #define IS_PAIR(zval)                                                      \
@@ -75,7 +80,7 @@
 #define ELEMENTS_VALIDATE(elements, err, err_then)                         \
     zend_array* elements##_arr;                                            \
     if (IS_COLLECTION_P(elements)) {                                       \
-        (elements##_arr) = Z_COLLECTION_P(elements);                     \
+        (elements##_arr) = Z_COLLECTION_P(elements);                       \
     } else if (UNEXPECTED(Z_TYPE_P(elements) == IS_ARRAY)) {               \
         (elements##_arr) = Z_ARRVAL_P(elements);                           \
     } else {                                                               \
@@ -348,7 +353,7 @@ static zend_always_inline compare_func_t compare_func_init(
     return reverse ? bucket_reverse_compare_regular : bucket_compare_regular;
 }
 
-static zend_always_inline void zend_hash_sort_by(zend_array* ht)
+static zend_always_inline void array_sort_by(zend_array* ht)
 {
     uint32_t i;
     if (HT_IS_WITHOUT_HOLES(ht)) {
@@ -381,6 +386,39 @@ static zend_always_inline void zend_hash_sort_by(zend_array* ht)
     }
 }
 
+static zend_always_inline void array_packed_renumber(zend_array* ht)
+{
+    Bucket* bucket = ht->arData;
+    Bucket* last = NULL;
+    uint32_t idx;
+    for (idx = 0; bucket < ht->arData + ht->nNumUsed; ++bucket, ++idx) {
+        bucket->h = idx;
+        if (Z_ISUNDEF(bucket->val)) {
+            if (UNEXPECTED(last == NULL)) {
+                last = bucket;
+            }
+        } else if (EXPECTED(last)) {
+            ZVAL_COPY_VALUE(&(last++)->val, &bucket->val);
+            ZVAL_UNDEF(&bucket->val);
+        }
+    }
+    ht->nNumUsed = ht->nNumOfElements;
+    zend_hash_to_packed(ht);
+}
+
+static zend_always_inline void delete_by_offset(zend_array* ht, uint32_t offset,
+    zend_bool packed)
+{
+    Bucket* bucket = ht->arData + offset;
+    if (packed) {
+        zval_ptr_dtor(&bucket->val);
+        ZVAL_UNDEF(&bucket->val);
+        --ht->nNumOfElements;
+    } else {
+        zend_hash_del_bucket(ht, bucket);
+    }
+}
+
 static zend_always_inline void array_distinct(zend_array* ht, Bucket* ref, compare_func_t cmp,
     equal_check_func_t eql)
 {
@@ -390,44 +428,138 @@ static zend_always_inline void array_distinct(zend_array* ht, Bucket* ref, compa
     zend_sort(ref, num_elements, sizeof(Bucket), packed ? bucket_compare_with_idx : cmp,
         (swap_func_t)zend_hash_bucket_packed_swap);
     Bucket* first = &ref[0];
+    for (idx = 1; idx < num_elements; ++idx) {
+        Bucket* bucket = &ref[idx];
+        if (eql(&bucket->val, &first->val)) {
+            delete_by_offset(ht, bucket->h, packed);
+        } else {
+            first = bucket;
+        }
+    }
     if (packed) {
-        for (idx = 1; idx < num_elements; ++idx) {
-            Bucket* bucket = &ref[idx];
-            if (eql(&bucket->val, &first->val)) {
-                Bucket* duplicate = ht->arData + bucket->h;
-                zval_ptr_dtor(&duplicate->val);
-                ZVAL_UNDEF(&duplicate->val);
-                --ht->nNumOfElements;
-            } else {
-                first = bucket;
-            }
+        array_packed_renumber(ht);
+    }
+}
+
+static zend_always_inline uint32_t advance_idx(zend_array* ht, Bucket* ref,
+    uint32_t offset, uint32_t max_offset, equal_check_func_t eql,
+    zend_bool del_dup, zend_bool packed)
+{
+    for (++offset; offset < max_offset; ++offset) {
+        if (!eql(&ref[offset].val, &ref[offset - 1].val)) {
+            return offset;
         }
-        // Renumber the integer keys and return a new Collection with packed zend_array.
-        Bucket* bucket = ht->arData;
-        Bucket* last = NULL;
-        for (idx = 0; bucket < ht->arData + ht->nNumUsed; ++bucket, ++idx) {
-            bucket->h = idx;
-            if (Z_ISUNDEF(bucket->val)) {
-                if (UNEXPECTED(last == NULL)) {
-                    last = bucket;
-                }
-            } else if (EXPECTED(last)) {
-                ZVAL_COPY_VALUE(&(last++)->val, &bucket->val);
-                ZVAL_UNDEF(&bucket->val);
-            }
+        if (del_dup) {
+            delete_by_offset(ht, ref[offset].h, packed);
         }
-        ht->nNumUsed = ht->nNumOfElements;
-        zend_hash_to_packed(ht);
+    }
+    return 0;
+}
+
+static zend_always_inline void tail_cleanup(zend_array* ht,
+    Bucket* ref, uint32_t offset, uint32_t max_offset, zend_bool packed,
+    equal_check_func_t eql, zend_bool subtract, zend_bool del_dup)
+{
+    if (subtract) {
+        if (!del_dup) {
+            return;
+        }
+        while (offset) {
+            offset = advance_idx(ht, ref, offset, max_offset, eql, 1, packed);
+        }
     } else {
-        for (idx = 1; idx < num_elements; ++idx) {
-            Bucket* bucket = &ref[idx];
-            if (eql(&bucket->val, &first->val)) {
-                zend_hash_del_bucket(ht, ht->arData + bucket->h);
-            } else {
-                first = bucket;
+        for (; offset < max_offset; ++offset) {
+            delete_by_offset(ht, ref[offset].h, packed);
+        }
+    }
+}
+
+static zend_always_inline void array_slice_by(zend_array* ht, zend_array* other,
+    zend_long flags)
+{
+    zend_bool packed = HT_IS_PACKED(ht);
+    uint32_t num_this = zend_hash_num_elements(ht);
+    if (UNEXPECTED(num_this == 0)) {
+        return;
+    }
+    zend_bool del_dup = flags & REMOVE_DUPLICATE;
+    zend_bool subtract = flags & ELEMENT_SUBTRACT;
+    uint32_t num_other = zend_hash_num_elements(other);
+    if (UNEXPECTED(num_other == 0)) {
+        if (!subtract) {
+            zend_hash_clean(ht);
+        }
+        return;
+    }
+    Bucket* ref_this = (Bucket*)malloc(num_this * sizeof(Bucket));
+    compare_func_t cmp = NULL;
+    equal_check_func_t eql;
+    uint32_t idx = 0;
+    ZEND_HASH_FOREACH_BUCKET(ht, Bucket* bucket)
+        if (UNEXPECTED(cmp == NULL)) {
+            cmp = compare_func_init(&bucket->val, 0, 0);
+            eql = equal_check_func_init(&bucket->val);
+        }
+        Bucket* dest = &ref_this[idx++];
+        dest->key = NULL;
+        dest->h = bucket - ht->arData;
+        memcpy(&dest->val, &bucket->val, sizeof(zval));
+    ZEND_HASH_FOREACH_END();
+    CMP_G = cmp;
+    zend_sort(ref_this, num_this, sizeof(Bucket), packed ? bucket_compare_with_idx : cmp,
+        (swap_func_t)zend_hash_bucket_packed_swap);
+    Bucket* ref_other = (Bucket*)malloc(num_other * sizeof(Bucket));
+    uint32_t idx_other = 0;
+    ZEND_HASH_FOREACH_BUCKET(other, Bucket* bucket)
+        Bucket* dest = &ref_other[idx_other++];
+        dest->key = NULL;
+        dest->h = bucket - other->arData;
+        memcpy(&dest->val, &bucket->val, sizeof(zval));
+    ZEND_HASH_FOREACH_END();
+    zend_sort(ref_other, num_other, sizeof(Bucket), packed ? bucket_compare_with_idx : cmp,
+        (swap_func_t)zend_hash_bucket_packed_swap);
+    idx = idx_other = 0;
+    while (1) {
+        Bucket* this = &ref_this[idx];
+        Bucket* other = &ref_other[idx_other];
+        int result = cmp(&this->val, &other->val);
+        if (result == 0) {
+            // Element exists in both zend_array.
+            if (subtract) {
+                delete_by_offset(ht, ref_this[idx].h, packed);
+            }
+            idx = advance_idx(ht, ref_this, idx, num_this, eql, subtract || del_dup, packed);
+            if (UNEXPECTED(idx == 0)) {
+                break;
+            }
+            idx_other = advance_idx(NULL, ref_other, idx_other, num_other, eql, 0, 0);
+            if (UNEXPECTED(idx_other == 0)) {
+                tail_cleanup(ht, ref_this, idx, num_this, packed, eql, subtract, del_dup);
+                break;
+            }
+        } else if (result == -1) {
+            // Element `ref_this[idx]` exists only in current zend_array.
+            if (!subtract) {
+                delete_by_offset(ht, ref_this[idx].h, packed);
+            }
+            idx = advance_idx(ht, ref_this, idx, num_this, eql, !subtract || del_dup, packed);
+            if (UNEXPECTED(idx == 0)) {
+                break;
+            }
+        } else {
+            // Element `ref_other[other_idx]` exists only in the other zend_array.
+            idx_other = advance_idx(NULL, ref_other, idx_other, num_other, eql, 0, 0);
+            if (UNEXPECTED(idx_other == 0)) {
+                tail_cleanup(ht, ref_this, idx, num_this, packed, eql, subtract, del_dup);
+                break;
             }
         }
     }
+    if (packed) {
+        array_packed_renumber(ht);
+    }
+    free(ref_this);
+    free(ref_other);
 }
 
 int count_collection(zval* obj, zend_long* count)
@@ -962,7 +1094,8 @@ PHP_METHOD(Collection, distinct)
     zend_array* current = THIS_COLLECTION;
     compare_func_t cmp = NULL;
     equal_check_func_t eql = NULL;
-    Bucket* ref = (Bucket*)malloc(zend_hash_num_elements(current) * sizeof(Bucket));
+    uint32_t num_elements = zend_hash_num_elements(current);
+    Bucket* ref = (Bucket*)malloc(num_elements * sizeof(Bucket));
     ARRAY_CLONE(distinct, current);
     uint32_t idx = 0;
     ZEND_HASH_FOREACH_BUCKET(distinct, Bucket* bucket)
@@ -1710,7 +1843,15 @@ PHP_METHOD(Collection, intersectKeys)
 
 PHP_METHOD(Collection, intersectValues)
 {
-
+    zval* elements;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(elements)
+    ZEND_PARSE_PARAMETERS_END();
+    ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
+    zend_array* current = THIS_COLLECTION;
+    ARRAY_CLONE(intersected, current);
+    array_slice_by(intersected, elements_arr, REMOVE_DUPLICATE | ELEMENT_INTERSECT);
+    RETVAL_NEW_COLLECTION(intersected);
 }
 
 PHP_METHOD(Collection, isEmpty)
@@ -2244,7 +2385,14 @@ PHP_METHOD(Collection, remove)
 
 PHP_METHOD(Collection, removeAll)
 {
-
+    zval* elements;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(elements)
+    ZEND_PARSE_PARAMETERS_END();
+    ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
+    zend_array* current = THIS_COLLECTION;
+    SEPARATE_CURRENT_COLLECTION(current);
+    array_slice_by(current, elements_arr, RETAIN_DUPLICATE | ELEMENT_SUBTRACT);
 }
 
 PHP_METHOD(Collection, removeWhile)
@@ -2269,7 +2417,14 @@ PHP_METHOD(Collection, removeWhile)
 
 PHP_METHOD(Collection, retainAll)
 {
-    
+    zval* elements;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(elements)
+    ZEND_PARSE_PARAMETERS_END();
+    ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
+    zend_array* current = THIS_COLLECTION;
+    SEPARATE_CURRENT_COLLECTION(current);
+    array_slice_by(current, elements_arr, RETAIN_DUPLICATE | ELEMENT_INTERSECT);
 }
 
 PHP_METHOD(Collection, retainWhile)
@@ -2501,7 +2656,7 @@ PHP_METHOD(Collection, sortBy)
     ZEND_HASH_FOREACH_END();
     REF_G = sort_by;
     CMP_G = cmp;
-    zend_hash_sort_by(current);
+    array_sort_by(current);
     for (idx = 0; idx < num_elements; ++idx) {
         zval_ptr_dtor(&sort_by[idx]);
     }
@@ -2539,7 +2694,7 @@ PHP_METHOD(Collection, sortByDescending)
     ZEND_HASH_FOREACH_END();
     REF_G = sort_by;
     CMP_G = cmp;
-    zend_hash_sort_by(current);
+    array_sort_by(current);
     for (idx = 0; idx < num_elements; ++idx) {
         zval_ptr_dtor(&sort_by[idx]);
     }
@@ -2642,7 +2797,7 @@ PHP_METHOD(Collection, sortedBy)
     ZEND_HASH_FOREACH_END();
     REF_G = sort_by;
     CMP_G = cmp;
-    zend_hash_sort_by(sorted);
+    array_sort_by(sorted);
     for (idx = 0; idx < num_elements; ++idx) {
         zval_ptr_dtor(&sort_by[idx]);
     }
@@ -2681,7 +2836,7 @@ PHP_METHOD(Collection, sortedByDescending)
     ZEND_HASH_FOREACH_END();
     REF_G = sort_by;
     CMP_G = cmp;
-    zend_hash_sort_by(sorted);
+    array_sort_by(sorted);
     for (idx = 0; idx < num_elements; ++idx) {
         zval_ptr_dtor(&sort_by[idx]);
     }
@@ -2734,7 +2889,15 @@ PHP_METHOD(Collection, sortedWith)
 
 PHP_METHOD(Collection, subtract)
 {
-
+    zval* elements;
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(elements)
+    ZEND_PARSE_PARAMETERS_END();
+    ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
+    zend_array* current = THIS_COLLECTION;
+    ARRAY_CLONE(subtracted, current);
+    array_slice_by(subtracted, elements_arr, REMOVE_DUPLICATE | ELEMENT_SUBTRACT);
+    RETVAL_NEW_COLLECTION(subtracted);
 }
 
 PHP_METHOD(Collection, sum)

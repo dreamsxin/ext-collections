@@ -1,5 +1,5 @@
 --TEST--
-Test Collection::removeWhile().
+Test Collection::removeWhile() and Collection::retainWhile().
 --FILE--
 <?php
 $array = ['a' => 4, 'b' => 1, 'c' => 9, 'd' => -2, 'e' => 0];
