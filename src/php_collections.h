@@ -7,6 +7,8 @@
 #ifndef PHP_COLLECTIONS_H
 #define PHP_COLLECTIONS_H
 
+#include <php.h>
+
 extern zend_module_entry collections_module_entry;
 #define phpext_collections_ptr          &collections_module_entry
 

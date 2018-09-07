@@ -4,12 +4,11 @@
 // @Author CismonX
 //
 
-#include <php.h>
-#include <ext/standard/php_string.h>
-#include <ext/standard/php_mt_rand.h>
-
 #include "php_collections.h"
 #include "php_collections_me.h"
+
+#include <ext/standard/php_string.h>
+#include <ext/standard/php_mt_rand.h>
 
 #if PHP_VERSION_ID < 70300
 #define GC_ADDREF(p)                ++GC_REFCOUNT(p)
@@ -742,7 +741,7 @@ PHP_METHOD(Collection, average)
             sum += Z_DVAL_P(val);
         } else {
             ERR_NOT_NUMERIC();
-            RETURN_FALSE;
+            RETURN_NULL();
         }
     ZEND_HASH_FOREACH_END();
     RETVAL_DOUBLE(sum / zend_hash_num_elements(current));
@@ -2273,6 +2272,26 @@ PHP_METHOD(Collection, retainAll)
     
 }
 
+PHP_METHOD(Collection, retainWhile)
+{
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    zend_array* current = COLLECTION_FETCH_CURRENT();
+    SEPARATE_CURRENT_COLLECTION(current);
+    INIT_FCI(&fci, 2);
+    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
+        if (!zend_is_true(&retval)) {
+            zend_hash_del_bucket(current, bucket);
+        }
+        zval_ptr_dtor(&retval);
+    ZEND_HASH_FOREACH_END();
+}
+
 PHP_METHOD(Collection, reverse)
 {
     zend_array* current = COLLECTION_FETCH_CURRENT();
@@ -2726,7 +2745,7 @@ PHP_METHOD(Collection, sum)
                 ZVAL_DOUBLE(&sum, 0.0);
             } else {
                 ERR_NOT_NUMERIC();
-                RETURN_FALSE;
+                RETURN_NULL();
             }
         }
         if (Z_TYPE_P(val) == IS_LONG) {
@@ -2735,7 +2754,7 @@ PHP_METHOD(Collection, sum)
             Z_DVAL(sum) += Z_DVAL_P(val);
         } else {
             ERR_NOT_NUMERIC();
-            RETURN_FALSE;
+            RETURN_NULL();
         }
     ZEND_HASH_FOREACH_END();
     RETVAL_ZVAL(&sum, 0, 0);
@@ -2762,7 +2781,7 @@ PHP_METHOD(Collection, sumBy)
             } else {
                 ERR_NOT_NUMERIC();
                 zval_ptr_dtor(&retval);
-                RETURN_FALSE;
+                RETURN_NULL();
             }
         }
         if (Z_TYPE(retval) == IS_LONG) {
@@ -2772,7 +2791,7 @@ PHP_METHOD(Collection, sumBy)
         } else {
             ERR_NOT_NUMERIC();
             zval_ptr_dtor(&retval);
-            RETURN_FALSE;
+            RETURN_NULL();
         }
     ZEND_HASH_FOREACH_END();
     RETVAL_ZVAL(&sum, 0, 0);

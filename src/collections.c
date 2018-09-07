@@ -8,11 +8,10 @@
 #include "config.h"
 #endif
 
-#include <php.h>
+#include "php_collections.h"
+
 #include <zend_interfaces.h>
 #include <ext/standard/info.h>
-
-#include "php_collections.h"
 
 zend_object_handlers collection_handlers;
 

@@ -7,6 +7,8 @@
 #ifndef PHP_COLLECTIONS_ME_H
 #define PHP_COLLECTIONS_ME_H
 
+#include <php.h>
+
 PHP_METHOD(Collection, __construct);
 PHP_METHOD(Collection, addAll);
 PHP_METHOD(Collection, all);
@@ -77,6 +79,7 @@ PHP_METHOD(Collection, remove);
 PHP_METHOD(Collection, removeAll);
 PHP_METHOD(Collection, removeWhile);
 PHP_METHOD(Collection, retainAll);
+PHP_METHOD(Collection, retainWhile);
 PHP_METHOD(Collection, reverse);
 PHP_METHOD(Collection, reversed);
 PHP_METHOD(Collection, shuffle);

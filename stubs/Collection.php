@@ -88,7 +88,7 @@ class Collection implements ArrayAccess, Countable
     /**
      * Returns an average value of elements in the collection.
      *
-     * @return double|false
+     * @return double|null
      */
     function average() {}
 
@@ -665,6 +665,14 @@ class Collection implements ArrayAccess, Countable
     function retainAll($elements) {}
 
     /**
+     * Retains all elements from this collection that match the given predicate.
+     *
+     * @param callable $predicate ($value, $key) -> bool
+     * @return void
+     */
+    function retainWhile($predicate) {}
+
+    /**
      * Reverses elements in the collection in-place.
      *
      * @return void
@@ -812,7 +820,7 @@ class Collection implements ArrayAccess, Countable
      * 
      * All elements should be of the same type, int or double. Otherwise result is undefined.
      * 
-     * @return int|double|false
+     * @return int|double|null
      */
     function sum() {}
 
@@ -824,7 +832,7 @@ class Collection implements ArrayAccess, Countable
      * Otherwise result is undefined.
      * 
      * @param callable $selector ($value, $key) -> int|double
-     * @return int|double|false
+     * @return int|double|null
      */
     function sumBy($selector) {}
 

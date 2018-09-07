@@ -4,8 +4,6 @@
 // @Author CismonX
 //
 
-#include <php.h>
-
 #include "php_collections_me.h"
 
 ZEND_BEGIN_ARG_INFO(action_arginfo, 0)
@@ -189,6 +187,7 @@ const zend_function_entry collection_methods[] = {
     PHP_ME(Collection, removeAll, other_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, removeWhile, predicate_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, retainAll, other_arginfo, ZEND_ACC_PUBLIC)
+    PHP_ME(Collection, retainWhile, predicate_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, reverse, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, reversed, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, shuffle, NULL, ZEND_ACC_PUBLIC)
