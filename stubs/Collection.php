@@ -816,6 +816,15 @@ class Collection implements ArrayAccess, Countable
     function sortedWith($comparator) {}
 
     /**
+     * Returns a collection containing all distinct elements that are contained by this
+     * collection and not contained by the specified collection.
+     *
+     * @param array|Collection $other
+     * @return Collection
+     */
+    function subtract($other) {}
+
+    /**
      * Returns the sum of all elements in the collection.
      * 
      * All elements should be of the same type, int or double. Otherwise result is undefined.

@@ -97,6 +97,7 @@ PHP_METHOD(Collection, sortedBy);
 PHP_METHOD(Collection, sortedByDescending);
 PHP_METHOD(Collection, sortedDescending);
 PHP_METHOD(Collection, sortedWith);
+PHP_METHOD(Collection, subtract);
 PHP_METHOD(Collection, sum);
 PHP_METHOD(Collection, sumBy);
 PHP_METHOD(Collection, take);

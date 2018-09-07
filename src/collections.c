@@ -13,6 +13,15 @@
 #include <zend_interfaces.h>
 #include <ext/standard/info.h>
 
+#define COLLECTIONS_CE_INIT(cls, name)                                \
+    zend_class_entry cls##_ce;                                        \
+    INIT_CLASS_ENTRY(cls##_ce, name, cls##_methods);                  \
+    collections_##cls##_ce = zend_register_internal_class(&cls##_ce)
+#define COLLECTIONS_CONST_DECLARE(cls, name, val)                     \
+    zend_declare_class_constant_long(collections_##cls##_ce, name, sizeof(name) - 1, val)
+#define COLLECTIONS_PROP_DECLARE(cls, name, flags)                    \
+    zend_declare_property_null(collections_##cls##_ce, name, sizeof(name) - 1, flags)
+
 zend_object_handlers collection_handlers;
 
 zend_class_entry* collections_collection_ce;
@@ -22,13 +31,9 @@ ZEND_DECLARE_MODULE_GLOBALS(collections)
 
 static zend_always_inline void collection_ce_init()
 {
-    zend_class_entry collection_ce;
-    INIT_CLASS_ENTRY_EX(collection_ce, "Collection", sizeof "Collection" - 1, collection_methods);
-    collections_collection_ce = zend_register_internal_class(&collection_ce);
-    zend_declare_class_constant_long(collections_collection_ce,
-        "COMPARE_NATRUAL", sizeof "COMPARE_NATRUAL" - 1, PHP_COLLECTIONS_COMPARE_NATURAL);
-    zend_declare_class_constant_long(collections_collection_ce,
-        "FOLD_CASE", sizeof "FOLD_CASE" - 1, PHP_COLLECTIONS_FOLD_CASE);
+    COLLECTIONS_CE_INIT(collection, "Collection");
+    COLLECTIONS_CONST_DECLARE(collection, "COMPARE_NATRUAL", PHP_COLLECTIONS_COMPARE_NATURAL);
+    COLLECTIONS_CONST_DECLARE(collection, "FOLD_CASE", PHP_COLLECTIONS_FOLD_CASE);
     zend_class_implements(collections_collection_ce,
 #if PHP_VERSION_ID < 70200
         1,
@@ -50,11 +55,9 @@ static zend_always_inline void collection_ce_init()
 
 static zend_always_inline void pair_ce_init()
 {
-    zend_class_entry pair_ce;
-    INIT_CLASS_ENTRY_EX(pair_ce, "Pair", sizeof "Pair" - 1, pair_methods);
-    collections_pair_ce = zend_register_internal_class(&pair_ce);
-    zend_declare_property_null(collections_pair_ce, "first", sizeof "first" - 1, ZEND_ACC_PUBLIC);
-    zend_declare_property_null(collections_pair_ce, "second", sizeof "second" - 1, ZEND_ACC_PUBLIC);
+    COLLECTIONS_CE_INIT(pair, "Pair");
+    COLLECTIONS_PROP_DECLARE(pair, "first", ZEND_ACC_PUBLIC);
+    COLLECTIONS_PROP_DECLARE(pair, "second", ZEND_ACC_PUBLIC);
 }
 
 PHP_MINIT_FUNCTION(collections)
