@@ -30,10 +30,10 @@
 #define ELEMENT_SUBTRACT         (1 << 1)
 #define ELEMENT_INTERSECT        (0 << 1)
 
-#define IS_COLLECTION_P(zval)                                              \
-    Z_TYPE_P(zval) == IS_OBJECT && Z_OBJCE_P(zval) == collections_collection_ce
-#define IS_PAIR(zval)                                                      \
-    Z_TYPE(zval) == IS_OBJECT && Z_OBJCE(zval) == collections_pair_ce
+#define IS_COLLECTION_P(val)                                               \
+    Z_TYPE_P(val) == IS_OBJECT && Z_OBJCE_P(val) == collections_collection_ce
+#define IS_PAIR(val)                                                       \
+    Z_TYPE(val) == IS_OBJECT && Z_OBJCE(val) == collections_pair_ce
 
 #define SEPARATE_COLLECTION(ht, obj)                                       \
     if (GC_REFCOUNT(ht) > 1) {                                             \
@@ -46,16 +46,16 @@
 #define INIT_FCI(fci, num_args)                                            \
     zval params[num_args], retval;                                         \
     (fci)->size = sizeof(zend_fcall_info);                                 \
-    (fci)->param_count = num_args;                                         \
+    (fci)->param_count = (num_args);                                       \
     (fci)->retval = &retval;                                               \
     (fci)->params = params
 
 #define CALLBACK_KEYVAL_INVOKE(params, bucket)                             \
-    ZVAL_COPY_VALUE(&params[0], &bucket->val);                             \
+    ZVAL_COPY_VALUE(&(params)[0], &(bucket)->val);                         \
     if ((bucket)->key) {                                                   \
-        ZVAL_STR(&params[1], (bucket)->key);                               \
+        ZVAL_STR(&(params)[1], (bucket)->key);                             \
     } else {                                                               \
-        ZVAL_LONG(&params[1], (bucket)->h);                                \
+        ZVAL_LONG(&(params)[1], (bucket)->h);                              \
     }                                                                      \
     zend_call_function(&fci, &fcc)
 
@@ -96,25 +96,23 @@
 #define ARRAY_CLONE(dest, src)                                             \
     zend_array* (dest) = zend_array_dup(src);
 
-#define RETVAL_NEW_COLLECTION(collection)                                  \
+#define RETVAL_NEW_COLLECTION(ht)                                          \
     {                                                                      \
-        zend_object* obj = create_collection_obj();                        \
-        if (GC_REFCOUNT(collection) > 1)                                   \
-            GC_ADDREF(collection);                                         \
-        obj->properties = collection;                                      \
-        RETVAL_OBJ(obj);                                                   \
+        zend_object* _obj = create_collection_obj();                       \
+        if (GC_REFCOUNT(ht) > 1) {                                         \
+            GC_ADDREF(ht);                                                 \
+        }                                                                  \
+        _obj->properties = ht;                                             \
+        RETVAL_OBJ(_obj);                                                  \
     }
 
-#define RETURN_NEW_COLLECTION(collection)                                  \
+#define RETURN_NEW_COLLECTION(ht)                                          \
     {                                                                      \
-        RETVAL_NEW_COLLECTION(collection);                                 \
+        RETVAL_NEW_COLLECTION(ht);                                         \
         return;                                                            \
     }
 
 typedef int (*equal_check_func_t)(zval*, zval*);
-
-/// Unused global variable.
-zval rv;
 
 static zend_always_inline void pair_update_first(zend_object* obj, zval* value)
 {
