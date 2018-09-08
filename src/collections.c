@@ -4,10 +4,6 @@
 // @Author CismonX
 //
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include "php_collections.h"
 
 #include <zend_interfaces.h>
@@ -28,6 +24,10 @@ zend_class_entry* collections_collection_ce;
 zend_class_entry* collections_pair_ce;
 
 ZEND_DECLARE_MODULE_GLOBALS(collections)
+
+#ifdef ZTS
+ZEND_TSRMLS_CACHE_DEFINE()
+#endif
 
 static zend_always_inline void collection_ce_init()
 {
