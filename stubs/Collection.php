@@ -96,29 +96,33 @@ class Collection implements ArrayAccess, Countable
      * Searches the array or the range of the array for the provided element using the
      * binary search algorithm.
      * 
-     * The array is expected to be packed and sorted, otherwise the result is undefined.
+     * The array is expected to be packed and sorted into ascending order, otherwise the
+     * result is undefined.
      * 
      * @param mixed $element
+     * @param int $flags[optional]
      * @param int $from_index[optional]
      * @param int $num_elements[optional]
      * @return int|null
      */
-    function binarySearch($element, $from_index, $num_elements) {}
+    function binarySearch($element, $flags, $from_index, $num_elements) {}
 
     /**
      * Searches the array or the range of the array for the provided element using the
      * binary search algorithm, where the element equals to the one returned by the
      * corresponding selector function.
      * 
-     * The array is expected to be packed and sorted, otherwise the result is undefined.
+     * The array is expected to be packed and sorted into ascending order, otherwise the
+     * result is undefined.
      * 
      * @param mixed $element
+     * @param callable $selector ($value, $key) -> $new_value
+     * @param int $flags[optional]
      * @param int $from_index[optional]
      * @param int $num_elements[optional]
-     * @param callable $selector ($value, $key) -> $new_value
      * @return int|null
      */
-    function binarySearchBy($element, $from_index, $num_elements, $selector) {}
+    function binarySearchBy($element, $selector, $flags, $from_index, $num_elements) {}
 
     /**
      * Splits this collection into a collection of arrays each not exceeding the given size.
