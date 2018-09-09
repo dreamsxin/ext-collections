@@ -877,6 +877,21 @@ PHP_METHOD(Collection, average)
     RETVAL_DOUBLE(sum / zend_hash_num_elements(current));
 }
 
+PHP_METHOD(Collection, binarySearch)
+{
+
+}
+
+PHP_METHOD(Collection, binarySearchBy)
+{
+    
+}
+
+PHP_METHOD(Collection, chunked)
+{
+    
+}
+
 PHP_METHOD(Collection, containsAll)
 {
     zval* elements;

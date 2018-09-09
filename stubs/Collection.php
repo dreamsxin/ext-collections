@@ -93,6 +93,44 @@ class Collection implements ArrayAccess, Countable
     function average() {}
 
     /**
+     * Searches the array or the range of the array for the provided element using the
+     * binary search algorithm.
+     * 
+     * The array is expected to be packed and sorted, otherwise the result is undefined.
+     * 
+     * @param mixed $element
+     * @param int $from_index[optional]
+     * @param int $num_elements[optional]
+     * @return int|null
+     */
+    function binarySearch($element, $from_index, $num_elements) {}
+
+    /**
+     * Searches the array or the range of the array for the provided element using the
+     * binary search algorithm, where the element equals to the one returned by the
+     * corresponding selector function.
+     * 
+     * The array is expected to be packed and sorted, otherwise the result is undefined.
+     * 
+     * @param mixed $element
+     * @param int $from_index[optional]
+     * @param int $num_elements[optional]
+     * @param callable $selector ($value, $key) -> $new_value
+     * @return int|null
+     */
+    function binarySearchBy($element, $from_index, $num_elements, $selector) {}
+
+    /**
+     * Splits this collection into a collection of arrays each not exceeding the given size.
+     * 
+     * If the transform function is provided, apply it on each array.
+     * 
+     * @param int $size
+     * @param callable $transform[optional] ($value, $key) -> $new_value
+     */
+    function chunked($size, $transform) {}
+
+    /**
      * Checks if all key-value pairs in the specified collection are contained in this collection.
      *
      * @param array|Collection $other
