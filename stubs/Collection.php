@@ -131,6 +131,7 @@ class Collection implements ArrayAccess, Countable
      * 
      * @param int $size
      * @param callable $transform[optional] ($value, $key) -> $new_value
+     * @return Collection
      */
     function chunked($size, $transform) {}
 

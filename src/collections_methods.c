@@ -889,7 +889,62 @@ PHP_METHOD(Collection, binarySearchBy)
 
 PHP_METHOD(Collection, chunked)
 {
-    
+    zend_long size;
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(1, 2)
+        Z_PARAM_LONG(size)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    if (size <= 0) {
+        ERR_BAD_SIZE();
+        RETURN_NULL();
+    }
+    zend_bool transform = EX_NUM_ARGS() > 1;
+    zend_array* current = THIS_COLLECTION;
+    zend_bool packed = HT_IS_PACKED(current);
+    INIT_FCI(&fci, 2);
+    ARRAY_NEW(chunked, 8);
+    uint32_t num_remaining = 0;
+    uint32_t num_chunks = 0;
+    zend_array* chunk = NULL;
+    ZEND_HASH_FOREACH_BUCKET(current, Bucket* bucket)
+        if (num_remaining == 0) {
+            chunk = (zend_array*)emalloc(sizeof(zend_array));
+            zend_hash_init(chunk, 8, NULL, ZVAL_PTR_DTOR, 0);
+            num_remaining = size;
+        }
+        Z_TRY_ADDREF(bucket->val);
+        if (bucket->key) {
+            zend_hash_add_new(chunk, bucket->key, &bucket->val);
+        } else if (packed) {
+            zend_hash_next_index_insert(chunk, &bucket->val);
+        } else {
+            zend_hash_index_add_new(chunk, bucket->h, &bucket->val);
+        }
+        if (--num_remaining == 0) {
+            ZVAL_ARR(&params[0], chunk);
+            if (transform) {
+                ZVAL_LONG(&params[1], num_chunks++);
+                zend_call_function(&fci, &fcc);
+                zend_hash_next_index_insert(chunked, &retval);
+            } else {
+                zend_hash_next_index_insert(chunked, &params[0]);
+            }
+        }
+    ZEND_HASH_FOREACH_END();
+    if (num_remaining) {
+        ZVAL_ARR(&params[0], chunk);
+        if (transform) {
+            ZVAL_LONG(&params[1], num_chunks++);
+            zend_call_function(&fci, &fcc);
+            zend_hash_next_index_insert(chunked, &retval);
+        } else {
+            zend_hash_next_index_insert(chunked, &params[0]);
+        }
+    }
+    RETVAL_NEW_COLLECTION(chunked);
 }
 
 PHP_METHOD(Collection, containsAll)
