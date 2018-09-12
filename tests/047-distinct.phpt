@@ -4,7 +4,7 @@ Test Collection::distinct().
 <?php
 $array = [];
 for ($i = 0; $i < 100; ++$i) {
-    $array[] = random_int(1, 10);
+    $array[] = mt_rand(1, 10);
 }
 $collection = Collection::init($array)->distinct();
 if ($collection->toArray() != array_values(array_unique($array))) {

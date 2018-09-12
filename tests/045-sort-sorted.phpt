@@ -4,7 +4,7 @@ Test Collection::sort(), Collection::sortDescending(), Collection::sorted(), Col
 <?php
 $array = [];
 for ($i = 0; $i < 100; ++$i) {
-    $array[] = random_int(-200, 200);
+    $array[] = mt_rand(-200, 200);
 }
 
 $collection = Collection::init($array);

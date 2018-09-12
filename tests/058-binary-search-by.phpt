@@ -1,18 +1,18 @@
 --TEST--
-Test Collection::binarySearch().
+Test Collection::binarySearch() and Collection::binarySearchBy().
 --FILE--
 <?php
 $array = [];
-$size = random_int(20, 30);
+$size = mt_rand(20, 30);
 for ($i = 0; $i < 50; ++$i) {
-    $array[] = random_int(100, 200);
+    $array[] = mt_rand(100, 200);
 }
 $array = array_unique($array);
 sort($array);
-$idx = random_int(0, count($array) - 1);
+$idx = mt_rand(0, count($array) - 1);
 $which = $array[$idx];
-$from = random_int(0, $idx);
-$to = random_int($idx, count($array));
+$from = mt_rand(0, $idx);
+$to = mt_rand($idx, count($array));
 $collection = Collection::init($array);
 if ($collection->binarySearch($which, 0, $from, $to) != $idx) {
     echo 'Collection::binarySearch() failed.', PHP_EOL;

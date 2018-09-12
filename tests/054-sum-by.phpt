@@ -4,7 +4,7 @@ Test Collection::sum() and Collection::sumBy().
 <?php
 $array = [];
 for ($i = 0; $i < 50; ++$i) {
-    $array[] = random_int(1, 50);
+    $array[] = mt_rand(1, 50);
 }
 $collection = Collection::init($array);
 $sum = array_sum($array);
@@ -12,7 +12,7 @@ if ($collection->sum() != $sum) {
     echo 'Collection::sum() failed.', PHP_EOL;
 }
 $array = array_map(function ($value) {
-    return [$value, floatval($value / random_int(3, 7))];
+    return [$value, floatval($value / mt_rand(3, 7))];
 }, $array);
 $collection = Collection::init($array);
 $sum = array_sum(array_column($array, 1));

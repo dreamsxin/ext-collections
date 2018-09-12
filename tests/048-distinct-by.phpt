@@ -4,7 +4,7 @@ Test Collection::distinctBy().
 <?php
 $array = [];
 for ($i = 0; $i < 100; ++$i) {
-    $array[] = random_bytes(random_int(1, 10));
+    $array[] = random_bytes(mt_rand(1, 10));
 }
 $get_len = function ($value) {
     return strlen($value);

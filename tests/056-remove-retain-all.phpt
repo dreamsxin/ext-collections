@@ -4,11 +4,11 @@ Test Collection::removeAll() and Collection::retainAll().
 <?php
 $array = [];
 for ($i = 0; $i < 50; ++$i) {
-    $array[] = random_int(1, 50);
+    $array[] = mt_rand(1, 50);
 }
 $array1 = [];
 for ($i = 0; $i < 50; ++$i) {
-    $array1[] = random_int(1, 50);
+    $array1[] = mt_rand(1, 50);
 }
 $collection = Collection::init($array);
 

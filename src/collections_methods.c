@@ -1000,6 +1000,11 @@ PHP_METHOD(Collection, binarySearchBy)
     free(ref);
 }
 
+PHP_METHOD(Collection, binarySearchWith)
+{
+
+}
+
 PHP_METHOD(Collection, chunked)
 {
     zend_long size;
@@ -2655,11 +2660,7 @@ PHP_METHOD(Collection, reverse)
             zend_hash_index_add(reversed, bucket->h, &bucket->val);
         }
     ZEND_HASH_FOREACH_END();
-    if (GC_REFCOUNT(current) > 1) {
-        GC_DELREF(current);
-    } else {
-        zend_array_destroy(current);
-    }
+    array_release(current);
     THIS_COLLECTION = reversed;
 }
 
@@ -2696,11 +2697,7 @@ PHP_METHOD(Collection, shuffle)
         zend_long rand_idx = php_mt_rand_range(offset, num_elements - 1);
         zend_hash_bucket_renum_swap(&bucket[offset], &bucket[rand_idx]);
     }
-    if (GC_REFCOUNT(current) > 1) {
-        GC_DELREF(current);
-    } else {
-        zend_array_destroy(current);
-    }
+    array_release(current);
     THIS_COLLECTION = shuffled;
 }
 
@@ -2933,11 +2930,7 @@ PHP_METHOD(Collection, sortWith)
         ZVAL_COPY_VALUE(val, PAIR_SECOND(pair));
         GC_DELREF(pair);
     ZEND_HASH_FOREACH_END();
-    if (GC_REFCOUNT(current) > 1) {
-        GC_DELREF(current);
-    } else {
-        zend_array_destroy(current);
-    }
+    array_release(current);
     THIS_COLLECTION = sorted_with;
 }
 

@@ -3,11 +3,11 @@ Test Collection::chunked().
 --FILE--
 <?php
 $array = [];
-$size = random_int(20, 30);
+$size = mt_rand(20, 30);
 for ($i = 0; $i < 50; ++$i) {
-    $array[] = random_int(100, 200);
+    $array[] = mt_rand(100, 200);
 }
-$chunk_size = random_int(4, 9);
+$chunk_size = mt_rand(4, 9);
 $chunked = array_chunk($array, $chunk_size, false);
 $collection = Collection::init($array);
 if ($collection->chunked($chunk_size)->toArray() != $chunked) {

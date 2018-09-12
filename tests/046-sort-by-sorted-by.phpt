@@ -4,7 +4,7 @@ Test Collection::sortBy(), Collection::sortByDescending(), Collection::sortedBy(
 <?php
 $array = [];
 for ($i = 0; $i < 4; ++$i) {
-    $array[random_bytes(2)] = [random_int(10, 99)];
+    $array[random_bytes(2)] = [mt_rand(10, 99)];
 }
 
 $sort_by = function ($value) {
