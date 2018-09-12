@@ -75,6 +75,8 @@
     PHP_COLLECTIONS_ERROR(E_WARNING, "Elements should be int or double")
 #define ERR_BAD_GROUP()                                                    \
     PHP_COLLECTIONS_ERROR(E_WARNING, "Group value must be array")
+#define ERR_NOT_PACKED()                                                   \
+    PHP_COLLECTIONS_ERROR(E_WARNING, "The array should be packed")
 #define ERR_SILENCED()
 
 #define ELEMENTS_VALIDATE(elements, err, err_then)                         \
@@ -145,6 +147,15 @@ static zend_always_inline zend_object* create_collection_obj()
 static zend_always_inline zend_object* create_pair_obj()
 {
     return create_object(collections_pair_ce, &std_object_handlers);
+}
+
+static zend_always_inline void array_release(zend_array* ht)
+{
+    if (GC_REFCOUNT(ht) > 1) {
+        GC_DELREF(ht);
+    } else {
+        zend_array_destroy(ht);
+    }
 }
 
 static zend_always_inline zend_array* array_group_fetch(zend_array* ht, zval* key)
@@ -349,6 +360,25 @@ static zend_always_inline compare_func_t compare_func_init(
         return reverse ? bucket_reverse_compare_string_cs : bucket_compare_string_cs;
     }
     return reverse ? bucket_reverse_compare_regular : bucket_compare_regular;
+}
+
+static zend_always_inline zend_long binary_search(Bucket* ref, zval* val,
+    zend_long from_idx, zend_long to_idx, compare_func_t cmp)
+{
+    zend_long low = from_idx;
+    zend_long high = to_idx - 1;
+    while (low <= high) {
+        zend_long mid = (low + high) >> 1;
+        int result = cmp(&ref[mid].val, val);
+        if (result == 1) {
+            high = mid - 1;
+        } else if (result == -1) {
+            low = mid + 1;
+        } else {
+            return mid;
+        }
+    }
+    return -(low + 1);
 }
 
 static zend_always_inline void array_sort_by(zend_array* ht)
@@ -879,12 +909,95 @@ PHP_METHOD(Collection, average)
 
 PHP_METHOD(Collection, binarySearch)
 {
-
+    zval* element;
+    zend_long flags = 0;
+    zend_long from_idx = 0;
+    zend_array* current = THIS_COLLECTION;
+    uint32_t num_elements = zend_hash_num_elements(current);
+    zend_long to_idx = num_elements;
+    ZEND_PARSE_PARAMETERS_START(1, 4)
+        Z_PARAM_ZVAL(element)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_LONG(flags)
+        Z_PARAM_LONG(from_idx)
+        Z_PARAM_LONG(to_idx)
+    ZEND_PARSE_PARAMETERS_END();
+    if (UNEXPECTED(!HT_IS_PACKED(current))) {
+        ERR_NOT_PACKED();
+        RETURN_NULL();
+    }
+    if (UNEXPECTED(from_idx < 0)) {
+        ERR_BAD_INDEX();
+        RETURN_NULL();
+    }
+    if (to_idx > num_elements) {
+        to_idx = num_elements;
+    }
+    if (UNEXPECTED(to_idx < from_idx)) {
+        ERR_BAD_SIZE();
+        RETURN_NULL();
+    }
+    compare_func_t cmp;
+    ZEND_HASH_FOREACH_VAL(current, zval* val)
+        cmp = compare_func_init(val, 0, flags);
+        break;
+    ZEND_HASH_FOREACH_END();
+    RETVAL_LONG(binary_search(current->arData, element, from_idx, to_idx, cmp));
 }
 
 PHP_METHOD(Collection, binarySearchBy)
 {
-    
+    zval* element;
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    zend_long flags = 0;
+    zend_long from_idx = 0;
+    zend_array* current = THIS_COLLECTION;
+    uint32_t num_elements = zend_hash_num_elements(current);
+    zend_long to_idx = num_elements;
+    ZEND_PARSE_PARAMETERS_START(2, 5)
+        Z_PARAM_ZVAL(element)
+        Z_PARAM_FUNC(fci, fcc)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_LONG(flags)
+        Z_PARAM_LONG(from_idx)
+        Z_PARAM_LONG(to_idx)
+    ZEND_PARSE_PARAMETERS_END();
+    if (UNEXPECTED(!HT_IS_PACKED(current))) {
+        ERR_NOT_PACKED();
+        RETURN_NULL();
+    }
+    if (UNEXPECTED(from_idx < 0)) {
+        ERR_BAD_INDEX();
+        RETURN_NULL();
+    }
+    if (to_idx > num_elements) {
+        to_idx = num_elements;
+    }
+    if (UNEXPECTED(to_idx < from_idx)) {
+        ERR_BAD_SIZE();
+        RETURN_NULL();
+    }
+    INIT_FCI(&fci, 2);
+    uint32_t range = to_idx - from_idx;
+    Bucket* ref = (Bucket*)malloc(range * sizeof(Bucket));
+    compare_func_t cmp = NULL;
+    uint32_t idx = 0;
+    Bucket* bucket = current->arData + from_idx;
+    Bucket* end = current->arData + to_idx;
+    for (; bucket < end; ++bucket) {
+        CALLBACK_KEYVAL_INVOKE(params, bucket);
+        memcpy(&ref[idx++].val, &bucket->val, sizeof(zval));
+        if (UNEXPECTED(cmp == NULL)) {
+            cmp = compare_func_init(&retval, 0, flags);
+        }
+    }
+    zend_long result = binary_search(ref, element, 0, range, cmp);
+    RETVAL_LONG(result < 0 ? result - from_idx : result + from_idx);
+    for (idx = 0; idx < range; ++idx) {
+        zval_ptr_dtor(&ref[idx].val);
+    }
+    free(ref);
 }
 
 PHP_METHOD(Collection, chunked)
@@ -928,6 +1041,7 @@ PHP_METHOD(Collection, chunked)
             if (transform) {
                 ZVAL_LONG(&params[1], num_chunks++);
                 zend_call_function(&fci, &fcc);
+                array_release(chunk);
                 zend_hash_next_index_insert(chunked, &retval);
             } else {
                 zend_hash_next_index_insert(chunked, &params[0]);
@@ -939,6 +1053,7 @@ PHP_METHOD(Collection, chunked)
         if (transform) {
             ZVAL_LONG(&params[1], num_chunks++);
             zend_call_function(&fci, &fcc);
+            array_release(chunk);
             zend_hash_next_index_insert(chunked, &retval);
         } else {
             zend_hash_next_index_insert(chunked, &params[0]);
@@ -1115,20 +1230,21 @@ PHP_METHOD(Collection, copyOf)
 
 PHP_METHOD(Collection, copyOfRange)
 {
-    zend_long from_idx, num_elements;
+    zend_long from_idx, to_idx;
     ZEND_PARSE_PARAMETERS_START(2, 2)
         Z_PARAM_LONG(from_idx)
-        Z_PARAM_LONG(num_elements)
+        Z_PARAM_LONG(to_idx)
     ZEND_PARSE_PARAMETERS_END();
-    if (from_idx < 0) {
+    if (UNEXPECTED(from_idx < 0)) {
         ERR_BAD_INDEX();
         RETURN_NULL();
     }
-    if (num_elements < 0) {
+    if (UNEXPECTED(to_idx < from_idx)) {
         ERR_BAD_SIZE();
         RETURN_NULL();
     }
     zend_array* current = THIS_COLLECTION;
+    uint32_t num_elements = to_idx - from_idx;
     ARRAY_NEW(new_collection, num_elements);
     zend_bool packed = HT_IS_PACKED(current);
     Bucket* bucket = current->arData;
@@ -1316,14 +1432,23 @@ PHP_METHOD(Collection, fill)
     zval* element;
     zend_long from_idx = 0;
     zend_array* current = THIS_COLLECTION;
-    SEPARATE_CURRENT_COLLECTION(current);
-    zend_long num_elements = zend_hash_num_elements(current - from_idx);
+    zend_long to_idx = zend_hash_num_elements(current);
     ZEND_PARSE_PARAMETERS_START(1, 3)
         Z_PARAM_ZVAL(element)
         Z_PARAM_OPTIONAL
         Z_PARAM_LONG(from_idx)
-        Z_PARAM_LONG(num_elements)
+        Z_PARAM_LONG(to_idx)
     ZEND_PARSE_PARAMETERS_END();
+    if (UNEXPECTED(from_idx < 0)) {
+        ERR_BAD_INDEX();
+        RETURN_NULL();
+    }
+    if (UNEXPECTED(to_idx < from_idx)) {
+        ERR_BAD_SIZE();
+        RETURN_NULL();
+    }
+    SEPARATE_CURRENT_COLLECTION(current);
+    uint32_t num_elements = to_idx - from_idx;
     Bucket* bucket = current->arData + from_idx;
     Bucket* end = bucket + current->nNumUsed;
     for (; num_elements > 0 && bucket < end; ++bucket, --num_elements) {

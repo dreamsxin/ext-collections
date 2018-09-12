@@ -4,7 +4,7 @@ Test Collection::fill().
 <?php
 $array = ['foo', 'bar' => 'baz', 1, 2, 3];
 $collection = Collection::init($array);
-$collection->fill('t', 1, 3);
+$collection->fill('t', 1, 4);
 $array1 = ['foo', 'bar' => 't', 't', 't', 3];
 $collection1 = Collection::init($array);
 $collection1->fill(0);

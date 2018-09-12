@@ -102,10 +102,10 @@ class Collection implements ArrayAccess, Countable
      * @param mixed $element
      * @param int $flags[optional]
      * @param int $from_index[optional]
-     * @param int $num_elements[optional]
+     * @param int $to_index[optional]
      * @return int|null
      */
-    function binarySearch($element, $flags, $from_index, $num_elements) {}
+    function binarySearch($element, $flags, $from_index, $to_index) {}
 
     /**
      * Searches the array or the range of the array for the provided element using the
@@ -119,10 +119,25 @@ class Collection implements ArrayAccess, Countable
      * @param callable $selector ($value, $key) -> $new_value
      * @param int $flags[optional]
      * @param int $from_index[optional]
-     * @param int $num_elements[optional]
+     * @param int $to_index[optional]
      * @return int|null
      */
-    function binarySearchBy($element, $selector, $flags, $from_index, $num_elements) {}
+    function binarySearchBy($element, $selector, $flags, $from_index, $to_index) {}
+
+    /**
+     * Searches the array or the range of the array for the provided element using the
+     * binary search algorithm.
+     * 
+     * The array is expected to be packed and sorted into ascending order according to
+     * the specified comparator, otherwise the result is undefined.
+     * 
+     * @param mixed $element
+     * @param callable $comparator (Pair($key, $value), Pair($key, $value)) -> int
+     * @param int $from_index[optional]
+     * @param int $to_index[optional]
+     * @return int|null
+     */
+    function binarySearchWith($element, $comparator, $from_index, $to_index) {}
 
     /**
      * Splits this collection into a collection of arrays each not exceeding the given size.
@@ -187,10 +202,10 @@ class Collection implements ArrayAccess, Countable
      * Returns new collection which is a copy of range of original collection.
      *
      * @param int $from_index
-     * @param int $num_elements
+     * @param int $to_index
      * @return Collection
      */
-    function copyOfRange($from_index, $num_elements) {}
+    function copyOfRange($from_index, $to_index) {}
 
     /**
      * Returns the number of elements in this collection.
@@ -260,10 +275,10 @@ class Collection implements ArrayAccess, Countable
      *
      * @param mixed $element
      * @param int $from_index[optional]
-     * @param int $num_elements[optional]
+     * @param int $to_index[optional]
      * @return void
      */
-    function fill($element, $from_index, $num_elements) {}
+    function fill($element, $from_index, $to_index) {}
 
     /**
      * Returns a collection containing only elements matching the given predicate.
