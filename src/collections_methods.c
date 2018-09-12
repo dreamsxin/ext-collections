@@ -987,7 +987,7 @@ PHP_METHOD(Collection, binarySearchBy)
     Bucket* end = current->arData + to_idx;
     for (; bucket < end; ++bucket) {
         CALLBACK_KEYVAL_INVOKE(params, bucket);
-        memcpy(&ref[idx++].val, &bucket->val, sizeof(zval));
+        memcpy(&ref[idx++].val, &retval, sizeof(zval));
         if (UNEXPECTED(cmp == NULL)) {
             cmp = compare_func_init(&retval, 0, flags);
         }
@@ -998,11 +998,6 @@ PHP_METHOD(Collection, binarySearchBy)
         zval_ptr_dtor(&ref[idx].val);
     }
     free(ref);
-}
-
-PHP_METHOD(Collection, binarySearchWith)
-{
-
 }
 
 PHP_METHOD(Collection, chunked)

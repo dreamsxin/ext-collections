@@ -23,6 +23,7 @@ $array = array_map(function ($value) {
 $selector = function ($value) {
     return $value[0];
 };
+$collection = Collection::init($array);
 if ($collection->binarySearchBy($which, $selector, 0, $from, $to) != $idx) {
     echo 'Collection::binarySearchBy() failed.', PHP_EOL;
 }

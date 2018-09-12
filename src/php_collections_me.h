@@ -20,7 +20,6 @@ PHP_METHOD(Collection, associateByTo);
 PHP_METHOD(Collection, average);
 PHP_METHOD(Collection, binarySearch);
 PHP_METHOD(Collection, binarySearchBy);
-PHP_METHOD(Collection, binarySearchWith);
 PHP_METHOD(Collection, chunked);
 PHP_METHOD(Collection, containsAll);
 PHP_METHOD(Collection, containsAllKeys);
