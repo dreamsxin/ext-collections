@@ -12,7 +12,7 @@ sort($array);
 $idx = mt_rand(0, count($array) - 1);
 $which = $array[$idx];
 $from = mt_rand(0, $idx);
-$to = mt_rand($idx, count($array));
+$to = mt_rand($idx + 1, count($array));
 $collection = Collection::init($array);
 if ($collection->binarySearch($which, 0, $from, $to) != $idx) {
     echo 'Collection::binarySearch() failed.', PHP_EOL;

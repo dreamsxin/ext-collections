@@ -25,13 +25,8 @@
 #define PAIR_FIRST(obj)          OBJ_PROP_NUM(obj, 0)
 #define PAIR_SECOND(obj)         OBJ_PROP_NUM(obj, 1)
 
-#define REMOVE_DUPLICATE         (1 << 0)
-#define RETAIN_DUPLICATE         (0 << 0)
-#define ELEMENT_SUBTRACT         (1 << 1)
-#define ELEMENT_INTERSECT        (0 << 1)
-
-#define IS_COLLECTION_P(val)                                               \
-    Z_TYPE_P(val) == IS_OBJECT && Z_OBJCE_P(val) == collections_collection_ce
+#define IS_COLLECTION(val)                                                 \
+    Z_TYPE(val) == IS_OBJECT && Z_OBJCE(val) == collections_collection_ce
 #define IS_PAIR(val)                                                       \
     Z_TYPE(val) == IS_OBJECT && Z_OBJCE(val) == collections_pair_ce
 
@@ -81,7 +76,7 @@
 
 #define ELEMENTS_VALIDATE(elements, err, err_then)                         \
     zend_array* elements##_arr;                                            \
-    if (IS_COLLECTION_P(elements)) {                                       \
+    if (IS_COLLECTION(*elements)) {                                        \
         (elements##_arr) = Z_COLLECTION_P(elements);                       \
     } else if (UNEXPECTED(Z_TYPE_P(elements) == IS_ARRAY)) {               \
         (elements##_arr) = Z_ARRVAL_P(elements);                           \
@@ -511,9 +506,8 @@ static zend_always_inline void array_distinct(zend_array* ht, Bucket* ref, compa
     }
 }
 
-static zend_always_inline uint32_t advance_idx(zend_array* ht, Bucket* ref,
-    uint32_t offset, uint32_t max_offset, equal_check_func_t eql,
-    zend_bool del_dup, zend_bool packed)
+static zend_always_inline uint32_t advance_idx(zend_array* ht, Bucket* ref, uint32_t offset,
+    uint32_t max_offset, equal_check_func_t eql, zend_bool del_dup, zend_bool packed)
 {
     for (++offset; offset < max_offset; ++offset) {
         if (!eql(&ref[offset].val, &ref[offset - 1].val)) {
@@ -545,15 +539,13 @@ static zend_always_inline void tail_cleanup(zend_array* ht,
 }
 
 static zend_always_inline void array_slice_by(zend_array* ht, zend_array* other,
-    zend_long flags)
+    zend_bool del_dup, zend_bool subtract)
 {
     zend_bool packed = HT_IS_PACKED(ht);
     uint32_t num_this = zend_hash_num_elements(ht);
     if (UNEXPECTED(num_this == 0)) {
         return;
     }
-    zend_bool del_dup = flags & REMOVE_DUPLICATE;
-    zend_bool subtract = flags & ELEMENT_SUBTRACT;
     uint32_t num_other = zend_hash_num_elements(other);
     if (UNEXPECTED(num_other == 0)) {
         if (!subtract) {
@@ -1999,7 +1991,7 @@ PHP_METHOD(Collection, intersectValues)
     ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
     zend_array* current = THIS_COLLECTION;
     ARRAY_CLONE(intersected, current);
-    array_slice_by(intersected, elements_arr, REMOVE_DUPLICATE | ELEMENT_INTERSECT);
+    array_slice_by(intersected, elements_arr, 1, 0);
     RETVAL_NEW_COLLECTION(intersected);
 }
 
@@ -2520,7 +2512,7 @@ PHP_METHOD(Collection, removeAll)
     ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
     zend_array* current = THIS_COLLECTION;
     SEPARATE_CURRENT_COLLECTION(current);
-    array_slice_by(current, elements_arr, RETAIN_DUPLICATE | ELEMENT_SUBTRACT);
+    array_slice_by(current, elements_arr, 0, 1);
 }
 
 PHP_METHOD(Collection, removeWhile)
@@ -2552,7 +2544,7 @@ PHP_METHOD(Collection, retainAll)
     ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
     zend_array* current = THIS_COLLECTION;
     SEPARATE_CURRENT_COLLECTION(current);
-    array_slice_by(current, elements_arr, RETAIN_DUPLICATE | ELEMENT_INTERSECT);
+    array_slice_by(current, elements_arr, 0, 0);
 }
 
 PHP_METHOD(Collection, retainWhile)
@@ -2998,7 +2990,7 @@ PHP_METHOD(Collection, subtract)
     ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
     zend_array* current = THIS_COLLECTION;
     ARRAY_CLONE(subtracted, current);
-    array_slice_by(subtracted, elements_arr, REMOVE_DUPLICATE | ELEMENT_SUBTRACT);
+    array_slice_by(subtracted, elements_arr, 1, 1);
     RETVAL_NEW_COLLECTION(subtracted);
 }
 
