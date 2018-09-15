@@ -78,7 +78,7 @@
     zend_array* elements##_arr;                                            \
     if (IS_COLLECTION(*elements)) {                                        \
         (elements##_arr) = Z_COLLECTION_P(elements);                       \
-    } else if (UNEXPECTED(Z_TYPE_P(elements) == IS_ARRAY)) {               \
+    } else if (EXPECTED(Z_TYPE_P(elements) == IS_ARRAY)) {                 \
         (elements##_arr) = Z_ARRVAL_P(elements);                           \
     } else {                                                               \
         err();                                                             \
