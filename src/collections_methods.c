@@ -520,9 +520,9 @@ static zend_always_inline uint32_t advance_idx(zend_array* ht, Bucket* ref, uint
     return 0;
 }
 
-static zend_always_inline void tail_cleanup(zend_array* ht,
-    Bucket* ref, uint32_t offset, uint32_t max_offset, zend_bool packed,
-    equal_check_func_t eql, zend_bool subtract, zend_bool del_dup)
+static zend_always_inline void tail_cleanup(zend_array* ht, Bucket* ref, uint32_t offset,
+    uint32_t max_offset, zend_bool packed, equal_check_func_t eql, zend_bool subtract,
+    zend_bool del_dup)
 {
     if (subtract) {
         if (!del_dup) {
