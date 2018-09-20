@@ -923,4 +923,16 @@ class Collection implements ArrayAccess, Countable
      * @return Collection
      */
     function values() {}
+
+    /**
+     * Returns a collection of pairs built from the elements of this array and other array
+     * with the same index. The returned collection has length of the shortest array.
+     * 
+     * Both arrays must be packed.
+     * 
+     * @param array|Collection $other
+     * @param callable $transform[optional] ($value, $key) -> $new_value
+     * @return Collection
+     */
+    function zip($other, $transform) {}
 }
