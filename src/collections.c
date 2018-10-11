@@ -17,6 +17,10 @@
     zend_declare_class_constant_long(collections_##cls##_ce, name, sizeof(name) - 1, val)
 #define COLLECTIONS_PROP_DECLARE(cls, name, flags)                    \
     zend_declare_property_null(collections_##cls##_ce, name, sizeof(name) - 1, flags)
+#define COLLECTIONS_HANDLERS_INIT(cls)                                \
+    memcpy(&cls##_handlers, &std_object_handlers, sizeof(zend_object_handlers))
+#define COLLECTIONS_HANDLER_SET(cls, name)                            \
+    cls##_handlers.name = cls##_##name
 
 zend_object_handlers collection_handlers;
 
@@ -41,16 +45,16 @@ static zend_always_inline void collection_ce_init()
         2, zend_ce_countable,
 #endif
         zend_ce_arrayaccess);
-    memcpy(&collection_handlers, &std_object_handlers, sizeof(zend_object_handlers));
-    collection_handlers.unset_dimension = collection_offset_unset;
-    collection_handlers.unset_property = collection_property_unset;
-    collection_handlers.write_dimension = collection_offset_set;
-    collection_handlers.write_property = collection_property_set;
-    collection_handlers.read_dimension = collection_offset_get;
-    collection_handlers.read_property = collection_property_get;
-    collection_handlers.has_dimension = collection_offset_exists;
-    collection_handlers.has_property = collection_property_exists;
-    collection_handlers.count_elements = count_collection;
+    COLLECTIONS_HANDLERS_INIT(collection);
+    COLLECTIONS_HANDLER_SET(collection, count_elements);
+    COLLECTIONS_HANDLER_SET(collection, has_dimension);
+    COLLECTIONS_HANDLER_SET(collection, write_dimension);
+    COLLECTIONS_HANDLER_SET(collection, read_dimension);
+    COLLECTIONS_HANDLER_SET(collection, unset_dimension);
+    COLLECTIONS_HANDLER_SET(collection, has_property);
+    COLLECTIONS_HANDLER_SET(collection, write_property);
+    COLLECTIONS_HANDLER_SET(collection, read_property);
+    COLLECTIONS_HANDLER_SET(collection, unset_property);
 }
 
 static zend_always_inline void pair_ce_init()
