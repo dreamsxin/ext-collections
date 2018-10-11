@@ -56,15 +56,15 @@ extern PHP_COLLECTIONS_API zend_class_entry* collections_pair_ce;
 
 extern zend_object_handlers collection_handlers;
 
-int count_collection(zval* obj, zend_long* count);
-int collection_offset_exists(zval* object, zval* offset, int check_empty);
-void collection_offset_set(zval* object, zval* offset, zval* value);
-zval* collection_offset_get(zval* object, zval* offset, int type, zval* retval);
-void collection_offset_unset(zval* object, zval* offset);
-int collection_property_exists(zval* object, zval* member, int has_set_exists, void**);
-void collection_property_set(zval* object, zval* member, zval* value, void**);
-zval* collection_property_get(zval* object, zval* member, int type, void**, zval* retval);
-void collection_property_unset(zval* object, zval* member, void**);
+int collection_count_elements(zval* obj, zend_long* count);
+int collection_has_dimension(zval* object, zval* offset, int check_empty);
+void collection_write_dimension(zval* object, zval* offset, zval* value);
+zval* collection_read_dimension(zval* object, zval* offset, int type, zval* rv);
+void collection_unset_dimension(zval* object, zval* offset);
+int collection_has_property(zval* object, zval* member, int has_set_exists, void**);
+void collection_write_property(zval* object, zval* member, zval* value, void**);
+zval* collection_read_property(zval* object, zval* member, int type, void**, zval* rv);
+void collection_unset_property(zval* object, zval* member, void**);
 
 extern const zend_function_entry collection_methods[];
 extern const zend_function_entry pair_methods[];

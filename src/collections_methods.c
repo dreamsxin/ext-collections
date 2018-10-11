@@ -624,19 +624,19 @@ static zend_always_inline void array_slice_by(zend_array* ht, zend_array* other,
     free(ref_other);
 }
 
-int count_collection(zval* obj, zend_long* count)
+int collection_count_elements(zval* obj, zend_long* count)
 {
     zend_array* current = Z_COLLECTION_P(obj);
     *count = zend_hash_num_elements(current);
     return SUCCESS;
 }
 
-int collection_offset_exists(zval* object, zval* offset, int check_empty)
+int collection_has_dimension(zval* object, zval* offset, int check_empty)
 {
     zend_array* current = Z_COLLECTION_P(object);
     if (check_empty) {
         zval result;
-        return zend_is_true(collection_offset_get(object, offset, 0, &result));
+        return zend_is_true(collection_read_dimension(object, offset, 0, &result));
     }
     if (Z_TYPE_P(offset) == IS_LONG) {
         return zend_hash_index_exists(current, Z_LVAL_P(offset));
@@ -647,7 +647,7 @@ int collection_offset_exists(zval* object, zval* offset, int check_empty)
     return 0;
 }
 
-int collection_property_exists(zval* object, zval* member, int has_set_exists,
+int collection_has_property(zval* object, zval* member, int has_set_exists,
     void** unused)
 {
     zend_array* current = Z_COLLECTION_P(object);
@@ -671,7 +671,7 @@ int collection_property_exists(zval* object, zval* member, int has_set_exists,
     return 1;
 }
 
-void collection_offset_set(zval* object, zval* offset, zval* value)
+void collection_write_dimension(zval* object, zval* offset, zval* value)
 {
     zend_array* current = Z_COLLECTION_P(object);
     SEPARATE_COLLECTION(current, object);
@@ -686,12 +686,12 @@ void collection_offset_set(zval* object, zval* offset, zval* value)
     Z_TRY_ADDREF_P(value);
 }
 
-void collection_property_set(zval* object, zval* member, zval* value, void** unused)
+void collection_write_property(zval* object, zval* member, zval* value, void** unused)
 {
-    collection_offset_set(object, member, value);
+    collection_write_dimension(object, member, value);
 }
 
-zval* collection_offset_get(zval* object, zval* offset, int type, zval* retval)
+zval* collection_read_dimension(zval* object, zval* offset, int type, zval* rv)
 {
     // Note that we don't handle type. So don't do any fancy things with Collection
     // such as fetching a reference of a value, etc.
@@ -701,21 +701,16 @@ zval* collection_offset_get(zval* object, zval* offset, int type, zval* retval)
         found = zend_hash_index_find(current, Z_LVAL_P(offset));
     } else if (Z_TYPE_P(offset) == IS_STRING) {
         found = zend_hash_find(current, Z_STR_P(offset));
-    } if (found) {
-        ZVAL_COPY_VALUE(retval, found);
-    } else {
-        retval = &EG(uninitialized_zval);
     }
-    return retval;
+    return found ? found : &EG(uninitialized_zval);
 }
 
-zval* collection_property_get(zval* object, zval* member, int type, void** unused,
-    zval* retval)
+zval* collection_read_property(zval* object, zval* member, int type, void** unused, zval* rv)
 {
-    return collection_offset_get(object, member, type, retval);
+    return collection_read_dimension(object, member, type, NULL);
 }
 
-void collection_offset_unset(zval* object, zval* offset)
+void collection_unset_dimension(zval* object, zval* offset)
 {
     zend_array* current = Z_COLLECTION_P(object);
     SEPARATE_COLLECTION(current, object);
@@ -726,9 +721,9 @@ void collection_offset_unset(zval* object, zval* offset)
     }
 }
 
-void collection_property_unset(zval* object, zval* member, void** unused)
+void collection_unset_property(zval* object, zval* member, void** unused)
 {
-    collection_offset_unset(object, member);
+    collection_unset_dimension(object, member);
 }
 
 PHP_METHOD(Collection, __construct) {}
@@ -1275,7 +1270,7 @@ PHP_METHOD(Collection, copyOfRange)
 PHP_METHOD(Collection, count)
 {
     zend_long count;
-    count_collection(getThis(), &count);
+    collection_count_elements(getThis(), &count);
     RETVAL_LONG(count);
 }
 
@@ -3278,6 +3273,7 @@ PHP_METHOD(Pair, __construct)
     ZEND_PARSE_PARAMETERS_END();
     Z_TRY_ADDREF_P(first);
     Z_TRY_ADDREF_P(second);
-    pair_update_first(Z_OBJ_P(getThis()), first);
-    pair_update_second(Z_OBJ_P(getThis()), second);
+    zend_object* current = Z_OBJ_P(getThis());
+    pair_update_first(current, first);
+    pair_update_second(current, second);
 }
