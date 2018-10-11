@@ -925,14 +925,44 @@ class Collection implements ArrayAccess, Countable
     function values() {}
 
     /**
+     * Returns a collection of snapshots of the window of the given size sliding along this
+     * collection with the given step, where each snapshot is an array.
+     * 
+     * If provided, the transform function will be applied to each snapshot.
+     * 
+     * @param int $size
+     * @param int $step[optional] = 1
+     * @param bool $partial_windows[optional] = false
+     * @param callable $transform ($value, $key) -> $new_value
+     * @return Collection
+     */
+    function windowed($size, $step, $partial_windows, $transform) {}
+
+    /**
      * Returns a collection of pairs built from the elements of this array and other array
      * with the same index. The returned collection has length of the shortest array.
+     * 
+     * If the transform function is provided, return a collection of the return values of
+     * the transform function applied to each pair of elements.
      * 
      * Both arrays must be packed.
      * 
      * @param array|Collection $other
-     * @param callable $transform[optional] ($value, $key) -> $new_value
+     * @param callable $transform[optional] ($v1, $v2) -> $new_value
      * @return Collection
      */
     function zip($other, $transform) {}
+    
+    /**
+     * Returns a list of pairs of each two adjacent elements in this collection.
+     * 
+     * If the transform function is provided, return a collection of the return values of
+     * the transform function applied to each pair of elements.
+     * 
+     * The wrapped array must be packed.
+     * 
+     * @param callable $transform[optional] ($v1, $v2) -> $new_value
+     * @return Collection
+     */
+    function zipWithNext($transform) {}
 }
