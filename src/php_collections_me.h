@@ -112,6 +112,9 @@ PHP_METHOD(Collection, toCollection);
 PHP_METHOD(Collection, toPairs);
 PHP_METHOD(Collection, union);
 PHP_METHOD(Collection, values);
+PHP_METHOD(Collection, windowed);
+PHP_METHOD(Collection, zip);
+PHP_METHOD(Collection, zipWithNext);
 
 PHP_METHOD(Pair, __construct);
 

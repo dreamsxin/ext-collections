@@ -3263,6 +3263,21 @@ PHP_METHOD(Collection, values)
     RETVAL_NEW_COLLECTION(new_collection);
 }
 
+PHP_METHOD(Collection, windowed)
+{
+    
+}
+
+PHP_METHOD(Collection, zip)
+{
+
+}
+
+PHP_METHOD(Collection, zipWithNext)
+{
+
+}
+
 PHP_METHOD(Pair, __construct)
 {
     zval* first;
