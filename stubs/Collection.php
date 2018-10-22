@@ -930,6 +930,8 @@ class Collection implements ArrayAccess, Countable
      * 
      * If provided, the transform function will be applied to each snapshot.
      * 
+     * The wrapped array must be packed.
+     * 
      * @param int $size
      * @param int $step[optional] = 1
      * @param bool $partial_windows[optional] = false

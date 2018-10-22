@@ -3265,7 +3265,61 @@ PHP_METHOD(Collection, values)
 
 PHP_METHOD(Collection, windowed)
 {
-    
+    zend_long size;
+    zend_long step = 1;
+    zend_bool partial_windows = 0;
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(1, 4)
+        Z_PARAM_LONG(size)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_LONG(step)
+        Z_PARAM_BOOL(partial_windows)
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    zend_array* current = THIS_COLLECTION;
+    if (size < 1 || step < 1) {
+        ERR_BAD_SIZE();
+        RETURN_NULL();
+    }
+    if (!HT_IS_PACKED(current)) {
+        ERR_NOT_PACKED();
+        RETURN_NULL();
+    }
+    zend_bool has_transform = EX_NUM_ARGS() == 4;
+    INIT_FCI(&fci, 2);
+    uint32_t num_elements = zend_hash_num_elements(current);
+    uint32_t num_ret;
+    if (partial_windows) {
+        num_ret = num_elements / step + (num_elements % step ? 1 : 0);
+    } else {
+        num_ret = num_elements >= size ? (num_elements - size) / step + 1 : 0;
+    }
+    ARRAY_NEW(windowed, num_ret);
+    Bucket* start = current->arData;
+    uint32_t idx;
+    uint32_t pos = 0;
+    for (idx = 0; idx < num_ret; ++idx, pos += step) {
+        ARRAY_NEW(snapshot, size);
+        uint32_t snapshot_idx;
+        for (snapshot_idx = 0; snapshot_idx < size; ++snapshot_idx) {
+            if (partial_windows && UNEXPECTED(pos + snapshot_idx >= num_elements)) {
+                break;
+            }
+            Bucket* bucket = start + pos + snapshot_idx;
+            zend_hash_next_index_insert(snapshot, &bucket->val);
+        }
+        if (has_transform) {
+            ZVAL_ARR(&params[0], snapshot);
+            ZVAL_LONG(&params[1], idx);
+            zend_call_function(&fci, &fcc);
+            array_release(snapshot);
+        } else {
+            ZVAL_ARR(&retval, snapshot);
+        }
+        zend_hash_next_index_insert(windowed, &retval);
+    }
+    RETVAL_NEW_COLLECTION(windowed);
 }
 
 PHP_METHOD(Collection, zip)
