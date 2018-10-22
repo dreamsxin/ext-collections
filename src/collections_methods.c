@@ -3307,6 +3307,7 @@ PHP_METHOD(Collection, windowed)
                 break;
             }
             Bucket* bucket = start + pos + snapshot_idx;
+            Z_TRY_ADDREF(bucket->val);
             zend_hash_next_index_insert(snapshot, &bucket->val);
         }
         if (has_transform) {
