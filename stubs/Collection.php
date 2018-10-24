@@ -935,7 +935,7 @@ class Collection implements ArrayAccess, Countable
      * @param int $size
      * @param int $step[optional] = 1
      * @param bool $partial_windows[optional] = false
-     * @param callable $transform ($value, $key) -> $new_value
+     * @param callable $transform[optional] ($value, $key) -> $new_value
      * @return Collection
      */
     function windowed($size, $step, $partial_windows, $transform) {}
