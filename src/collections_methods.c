@@ -2594,7 +2594,7 @@ PHP_METHOD(Collection, shuffle)
         Z_TRY_ADDREF_P(val);
         zend_hash_next_index_insert(shuffled, val);
     ZEND_HASH_FOREACH_END();
-    size_t offset = 0;
+    uint32_t offset = 0;
     Bucket* bucket = shuffled->arData;
     for (; offset < num_elements - 1; ++offset) {
         zend_long rand_idx = php_mt_rand_range(offset, num_elements - 1);
@@ -2613,7 +2613,7 @@ PHP_METHOD(Collection, shuffled)
         Z_TRY_ADDREF_P(val);
         zend_hash_next_index_insert(shuffled, val);
     ZEND_HASH_FOREACH_END();
-    size_t offset = 0;
+    uint32_t offset = 0;
     Bucket* bucket = shuffled->arData;
     for (; offset < num_elements - 1; ++offset) {
         zend_long rand_idx = php_mt_rand_range(offset, num_elements - 1);
