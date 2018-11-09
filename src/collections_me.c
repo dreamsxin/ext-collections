@@ -136,6 +136,18 @@ ZEND_BEGIN_ARG_INFO(to_collection_arginfo, 0)
     ZEND_ARG_OBJ_INFO(0, destination, Collection, 0)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO(windowed_arginfo, 0)
+    ZEND_ARG_TYPE_INFO(0, size, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, step, IS_LONG, 0)
+    ZEND_ARG_TYPE_INFO(0, partial_windows, _IS_BOOL, 0)
+    ZEND_ARG_CALLABLE_INFO(0, transform, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(zip_arginfo, 0)
+    ZEND_ARG_INFO(0, other)
+    ZEND_ARG_CALLABLE_INFO(0, transform, 0)
+ZEND_END_ARG_INFO()
+
 const zend_function_entry collection_methods[] = {
     PHP_ME(Collection, __construct, NULL, ZEND_ACC_PRIVATE | ZEND_ACC_CTOR)
     PHP_ME(Collection, addAll, elements_arginfo, ZEND_ACC_PUBLIC)
@@ -240,6 +252,9 @@ const zend_function_entry collection_methods[] = {
     PHP_ME(Collection, toPairs, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, union, other_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Collection, values, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Collection, windowed, windowed_arginfo, ZEND_ACC_PUBLIC)
+    PHP_ME(Collection, zip, zip_arginfo, ZEND_ACC_PUBLIC)
+    PHP_ME(Collection, zipWithNext, transform_arginfo, ZEND_ACC_PUBLIC)
     PHP_FE_END
 };
 
