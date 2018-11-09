@@ -3330,7 +3330,44 @@ PHP_METHOD(Collection, zip)
 
 PHP_METHOD(Collection, zipWithNext)
 {
-
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    zend_array* current = THIS_COLLECTION;
+    if (!HT_IS_PACKED(current)) {
+        ERR_NOT_PACKED();
+        RETURN_NULL();
+    }
+    zend_bool has_transform = EX_NUM_ARGS() == 1;
+    INIT_FCI(&fci, 2);
+    uint32_t num_elements = zend_hash_num_elements(current);
+    ARRAY_NEW(zipped, num_elements);
+    if (num_elements > 1) {
+        Bucket* start = current->arData;
+        uint32_t idx;
+        for (idx = 0; idx < num_elements - 1; ++idx) {
+            Bucket* bucket = start + idx;
+            if (has_transform) {
+                ZVAL_COPY_VALUE(&params[0], &bucket->val);
+                ZVAL_COPY_VALUE(&params[1], &(bucket + 1)->val);
+                zend_call_function(&fci, &fcc);
+            } else {
+                zend_object* obj = create_pair_obj();
+                Z_TRY_ADDREF(bucket->val);
+                Z_TRY_ADDREF((bucket + 1)->val);
+                pair_update_first(obj, &bucket->val);
+                pair_update_second(obj, &(bucket + 1)->val);
+                zval pair;
+                ZVAL_OBJ(&pair, obj);
+                ZVAL_COPY_VALUE(&retval, &pair);
+            }
+            zend_hash_next_index_insert(zipped, &retval);
+        }
+    }
+    RETVAL_NEW_COLLECTION(zipped);
 }
 
 PHP_METHOD(Pair, __construct)
