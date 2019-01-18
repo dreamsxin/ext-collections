@@ -183,7 +183,7 @@ static zend_always_inline zend_object* create_collection_obj()
 
 static zend_always_inline zend_object* create_pair_obj()
 {
-    return create_object(collections_pair_ce, &std_object_handlers);
+    return create_object(collections_pair_ce, (zend_object_handlers*)&std_object_handlers);
 }
 
 static zend_always_inline void array_release(zend_array* ht)
