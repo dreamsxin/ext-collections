@@ -183,7 +183,7 @@ static zend_always_inline zend_object* create_collection_obj()
 
 static zend_always_inline zend_object* create_pair_obj()
 {
-    return create_object(collections_pair_ce, &std_object_handlers);
+    return create_object(collections_pair_ce, (zend_object_handlers*)&std_object_handlers);
 }
 
 static zend_always_inline void array_release(zend_array* ht)
@@ -3325,7 +3325,49 @@ PHP_METHOD(Collection, windowed)
 
 PHP_METHOD(Collection, zip)
 {
-
+    zval* elements;
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    ZEND_PARSE_PARAMETERS_START(1, 2)
+        Z_PARAM_ZVAL(elements)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_FUNC(fci, fcc)
+    ZEND_PARSE_PARAMETERS_END();
+    ELEMENTS_VALIDATE(elements, ERR_BAD_ARGUMENT_TYPE, return);
+    zend_array* current = THIS_COLLECTION;
+    if (UNEXPECTED(!HT_IS_PACKED(current)) || UNEXPECTED(!HT_IS_PACKED(elements_arr))) {
+        ERR_NOT_PACKED();
+        RETURN_NULL();
+    }
+    zend_bool has_transform = EX_NUM_ARGS() > 1;
+    INIT_FCI(&fci, 2);
+    uint32_t num_elements = zend_hash_num_elements(current);
+    uint32_t num_other = zend_hash_num_elements(elements_arr);
+    if (num_other < num_elements) {
+        num_elements = num_other;
+    }
+    ARRAY_NEW(zipped, num_elements);
+    Bucket* bucket_this = current->arData;
+    Bucket* bucket_other = elements_arr->arData;
+    uint32_t idx;
+    for (idx = 0; idx < num_elements; ++idx) {
+        if (has_transform) {
+            ZVAL_COPY_VALUE(&params[0], &(bucket_this + idx)->val);
+            ZVAL_COPY_VALUE(&params[1], &(bucket_other + idx)->val);
+            zend_call_function(&fci, &fcc);
+        } else {
+            zend_object* obj = create_pair_obj();
+            Z_TRY_ADDREF((bucket_this + idx)->val);
+            Z_TRY_ADDREF((bucket_other + idx)->val);
+            pair_update_first(obj, &(bucket_this + idx)->val);
+            pair_update_second(obj, &(bucket_other + idx)->val);
+            zval pair;
+            ZVAL_OBJ(&pair, obj);
+            ZVAL_COPY_VALUE(&retval, &pair);
+        }
+        zend_hash_next_index_insert(zipped, &retval);
+    }
+    RETVAL_NEW_COLLECTION(zipped);
 }
 
 PHP_METHOD(Collection, zipWithNext)
@@ -3337,7 +3379,7 @@ PHP_METHOD(Collection, zipWithNext)
         Z_PARAM_FUNC(fci, fcc)
     ZEND_PARSE_PARAMETERS_END();
     zend_array* current = THIS_COLLECTION;
-    if (!HT_IS_PACKED(current)) {
+    if (UNEXPECTED(!HT_IS_PACKED(current))) {
         ERR_NOT_PACKED();
         RETURN_NULL();
     }
