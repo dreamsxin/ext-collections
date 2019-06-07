@@ -26,9 +26,9 @@
 #define PAIR_SECOND(obj)         OBJ_PROP_NUM(obj, 1)
 
 #define IS_COLLECTION(val)                                                 \
-    Z_TYPE(val) == IS_OBJECT && Z_OBJCE(val) == collections_collection_ce
+    (Z_TYPE(val) == IS_OBJECT && Z_OBJCE(val) == collections_collection_ce)
 #define IS_PAIR(val)                                                       \
-    Z_TYPE(val) == IS_OBJECT && Z_OBJCE(val) == collections_pair_ce
+    (Z_TYPE(val) == IS_OBJECT && Z_OBJCE(val) == collections_pair_ce)
 
 #define SEPARATE_COLLECTION(ht, obj)                                       \
     if (GC_REFCOUNT(ht) > 1) {                                             \
