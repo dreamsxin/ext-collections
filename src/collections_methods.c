@@ -21,14 +21,14 @@
 #define CMP_G                    COLLECTIONS_G(cmp)
 
 #define Z_COLLECTION_P(val)      (Z_OBJ_P(val)->properties)
-#define THIS_COLLECTION          Z_COLLECTION_P(getThis())
+#define THIS_COLLECTION          Z_COLLECTION_P(&EX(This))
 #define PAIR_FIRST(obj)          OBJ_PROP_NUM(obj, 0)
 #define PAIR_SECOND(obj)         OBJ_PROP_NUM(obj, 1)
 
 #define IS_COLLECTION(val)                                                 \
-    Z_TYPE(val) == IS_OBJECT && Z_OBJCE(val) == collections_collection_ce
+    (Z_TYPE(val) == IS_OBJECT && Z_OBJCE(val) == collections_collection_ce)
 #define IS_PAIR(val)                                                       \
-    Z_TYPE(val) == IS_OBJECT && Z_OBJCE(val) == collections_pair_ce
+    (Z_TYPE(val) == IS_OBJECT && Z_OBJCE(val) == collections_pair_ce)
 
 #define SEPARATE_COLLECTION(ht, obj)                                       \
     if (GC_REFCOUNT(ht) > 1) {                                             \
@@ -36,7 +36,7 @@
         ht = Z_OBJ_P(obj)->properties = zend_array_dup(ht);                \
     }
 #define SEPARATE_CURRENT_COLLECTION(ht)                                    \
-    SEPARATE_COLLECTION(ht, getThis())
+    SEPARATE_COLLECTION(ht, &EX(This))
 
 #define INIT_FCI(fci, num_args)                                            \
     zval params[num_args], retval;                                         \
@@ -1270,7 +1270,7 @@ PHP_METHOD(Collection, copyOfRange)
 PHP_METHOD(Collection, count)
 {
     zend_long count;
-    collection_count_elements(getThis(), &count);
+    collection_count_elements(&EX(This), &count);
     RETVAL_LONG(count);
 }
 
@@ -2324,7 +2324,7 @@ PHP_METHOD(Collection, onEach)
         CALLBACK_KEYVAL_INVOKE(params, bucket);
         zval_ptr_dtor(&retval);
     ZEND_HASH_FOREACH_END();
-    RETVAL_ZVAL(getThis(), 1, 0);
+    RETVAL_ZVAL(&EX(This), 1, 0);
 }
 
 PHP_METHOD(Collection, partition)
@@ -3422,7 +3422,7 @@ PHP_METHOD(Pair, __construct)
     ZEND_PARSE_PARAMETERS_END();
     Z_TRY_ADDREF_P(first);
     Z_TRY_ADDREF_P(second);
-    zend_object* current = Z_OBJ_P(getThis());
+    zend_object* current = Z_OBJ_P(&EX(This));
     pair_update_first(current, first);
     pair_update_second(current, second);
 }
