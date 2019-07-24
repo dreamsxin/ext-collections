@@ -31,6 +31,18 @@ The `Collection` class implements `ArrayAccess` and `Countable` interface intern
 * `empty()`, `count()` can be used on instance of `Collection`.
 * Elements can be traversed via `foreach()` keyword.
 
+### 2.3 Copy-on-write mechanism
+
+Class `Collection` does not introduce new data structures internally. Instead, it only holds a pointer to a `zend_array`, and all its methods works directly on top of `zend_array`. Which means conversion between `Collection` and `array` does not involve copying, until write operation is performed on one of the duplicates.
+
+```php
+$foo = ['a', 'b'];              // arr0: refcount = 1
+$bar = Collection::init($foo);  // arr0: refcount = 2, no copying of either `zend_array` or its elements
+echo $bar->containsValue('a');  // arr0: refcount = 2, read operation, no copying
+$bar->shuffle();                // arr0: refcount = 1, arr1: refcount = 1, write operation, `zend_array` is separated
+$baz = $bar->toArray();         // arr0: refcount = 1, arr1: refcount = 2, no copying
+```
+
 ### 2.4 Notes
 
 * The `Collection::xxxTo()` methods will preserve the original key-value pairs of destination `Collection` when keys collide.
