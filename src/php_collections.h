@@ -16,7 +16,7 @@
 extern zend_module_entry collections_module_entry;
 #define phpext_collections_ptr          &collections_module_entry
 
-#define PHP_COLLECTIONS_VERSION         "0.1.0"
+#define PHP_COLLECTIONS_VERSION         "0.1.1"
 
 #ifdef PHP_WIN32
 #define PHP_COLLECTIONS_API             __declspec(dllexport)
