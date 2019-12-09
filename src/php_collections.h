@@ -30,6 +30,12 @@ extern zend_module_entry collections_module_entry;
 #error "This extension requires PHP 7.1 and above."
 #endif
 
+#if PHP_VERSION_ID >= 70400
+typedef zval* zobj_write_prop_ret_t;
+#else
+typedef void zobj_write_prop_ret_t;
+#endif
+
 #define PHP_COLLECTIONS_COMPARE_NATURAL (1 << 0)
 #define PHP_COLLECTIONS_FOLD_CASE       (1 << 1)
 
@@ -62,7 +68,7 @@ void collection_write_dimension(zval* object, zval* offset, zval* value);
 zval* collection_read_dimension(zval* object, zval* offset, int type, zval* rv);
 void collection_unset_dimension(zval* object, zval* offset);
 int collection_has_property(zval* object, zval* member, int has_set_exists, void**);
-void collection_write_property(zval* object, zval* member, zval* value, void**);
+zobj_write_prop_ret_t collection_write_property(zval* object, zval* member, zval* value, void**);
 zval* collection_read_property(zval* object, zval* member, int type, void**, zval* rv);
 void collection_unset_property(zval* object, zval* member, void**);
 

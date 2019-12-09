@@ -691,9 +691,12 @@ void collection_write_dimension(zval* object, zval* offset, zval* value)
     Z_TRY_ADDREF_P(value);
 }
 
-void collection_write_property(zval* object, zval* member, zval* value, void** unused)
+zobj_write_prop_ret_t collection_write_property(zval* object, zval* member, zval* value, void** unused)
 {
     collection_write_dimension(object, member, value);
+#if PHP_VERSION_ID > 70400
+    return value;
+#endif
 }
 
 zval* collection_read_dimension(zval* object, zval* offset, int type, zval* rv)
