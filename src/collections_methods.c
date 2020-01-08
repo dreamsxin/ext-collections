@@ -15,6 +15,7 @@
 #define GC_DELREF(p)             --GC_REFCOUNT(p)
 #endif
 
+// Thread safty assured global variables.
 #define FCI_G                    COLLECTIONS_G(fci)
 #define FCC_G                    COLLECTIONS_G(fcc)
 #define REF_G                    COLLECTIONS_G(ref)
@@ -30,6 +31,7 @@
 #define IS_PAIR(val)                                                       \
     (Z_TYPE(val) == IS_OBJECT && Z_OBJCE(val) == collections_pair_ce)
 
+// Separation on the zend_array held by the collection.
 #define SEPARATE_COLLECTION(ht, obj)                                       \
     if (GC_REFCOUNT(ht) > 1) {                                             \
         GC_DELREF(ht);                                                     \
@@ -40,11 +42,11 @@
 
 #define INIT_FCI(fci, num_args)                                            \
     zval params[num_args], retval;                                         \
-    (fci)->size = sizeof(zend_fcall_info);                                 \
     (fci)->param_count = (num_args);                                       \
     (fci)->retval = &retval;                                               \
     (fci)->params = params
 
+// Invoke callback function, passing bucket value as 1st arg, key as 2nd.
 #define CALLBACK_KEYVAL_INVOKE(params, bucket)                             \
     ZVAL_COPY_VALUE(&(params)[0], &(bucket)->val);                         \
     if ((bucket)->key) {                                                   \
@@ -54,6 +56,7 @@
     }                                                                      \
     zend_call_function(&fci, &fcc)
 
+// Several E_WARNING level error messages. Could use exceptions instead.
 #define PHP_COLLECTIONS_ERROR(type, msg)                                   \
     php_error_docref(NULL, type, msg)
 #define ERR_BAD_ARGUMENT_TYPE()                                            \
@@ -74,6 +77,7 @@
     PHP_COLLECTIONS_ERROR(E_WARNING, "The array should be packed")
 #define ERR_SILENCED()
 
+// Validate and extract zend_array from collection.
 #define ELEMENTS_VALIDATE(elements, err, err_then)                         \
     zend_array* elements##_arr;                                            \
     if (IS_COLLECTION(*elements)) {                                        \
@@ -93,6 +97,7 @@
 #define ARRAY_CLONE(dest, src)                                             \
     zend_array* (dest) = zend_array_dup(src);
 
+// Creates a new collection which wraps the given zend_array.
 #define RETVAL_NEW_COLLECTION(ht)                                          \
     {                                                                      \
         zend_object* _obj = create_collection_obj();                       \
@@ -168,7 +173,7 @@ static zend_always_inline void array_update_bucket(zend_array* ht, Bucket* bucke
 static zend_always_inline zend_object* create_object(zend_class_entry* ce,
     zend_object_handlers* handlers)
 {
-    zend_object* obj = (zend_object*)ecalloc(1, sizeof(zend_object) +
+    zend_object* obj = (zend_object*)emalloc(sizeof(zend_object) +
         zend_object_properties_size(ce));
     zend_object_std_init(obj, ce);
     object_properties_init(obj, ce);
@@ -686,15 +691,16 @@ void collection_write_dimension(zval* object, zval* offset, zval* value)
     Z_TRY_ADDREF_P(value);
 }
 
-void collection_write_property(zval* object, zval* member, zval* value, void** unused)
+zobj_write_prop_ret_t collection_write_property(zval* object, zval* member, zval* value, void** unused)
 {
     collection_write_dimension(object, member, value);
+#if PHP_VERSION_ID > 70400
+    return value;
+#endif
 }
 
 zval* collection_read_dimension(zval* object, zval* offset, int type, zval* rv)
 {
-    // Note that we don't handle type. So don't do any fancy things with Collection
-    // such as fetching a reference of a value, etc.
     zend_array* current = Z_COLLECTION_P(object);
     zval* found = NULL;
     if (Z_TYPE_P(offset) == IS_LONG) {

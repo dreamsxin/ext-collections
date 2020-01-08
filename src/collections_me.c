@@ -6,12 +6,6 @@
 
 #include "php_collections_me.h"
 
-// ZEND_ACC_CTOR is removed in PHP 7.4
-// Removing the flag does not affect the constructor from being recognized.
-#if PHP_VERSION_ID >= 70400
-#define ZEND_ACC_CTOR            0
-#endif
-
 ZEND_BEGIN_ARG_INFO(action_arginfo, 0)
     ZEND_ARG_CALLABLE_INFO(0, action, 0)
 ZEND_END_ARG_INFO()
